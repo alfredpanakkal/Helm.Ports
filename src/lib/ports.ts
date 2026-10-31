@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 export interface PortRecord {
   wpi_port_id: number;
@@ -96,9 +97,28 @@ function normalizePort(raw: Record<string, unknown>): PortRecord {
   };
 }
 
+/**
+ * Locates data/ports.json across runtimes:
+ *  - local dev / node hosting: process.cwd() is the repo root
+ *  - Vercel serverless: the file is bundled into the function via
+ *    vercel.json "includeFiles"; cwd or the module-relative layout applies
+ */
+function resolveDataFile(): string {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    path.join(process.cwd(), "data", "ports.json"),
+    path.join(here, "..", "..", "data", "ports.json"),
+    path.join(here, "..", "..", "..", "data", "ports.json"),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  throw new Error("data/ports.json not found (tried: " + candidates.join(", ") + ")");
+}
+
 export function getPorts(): PortRecord[] {
   if (cachedPorts) return cachedPorts;
-  const filePath = path.join(process.cwd(), "data", "ports.json");
+  const filePath = resolveDataFile();
   const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
   cachedPorts = (raw.ports as Record<string, unknown>[]).map(normalizePort);
   cachedMetadata = {

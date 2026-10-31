@@ -1,0 +1,6 @@
+{
+  "name": "Ports Explorer",
+  "description": "Search, filter, and map 5,410 worldwide maritime ports from the NGA World Port Index with channel depths, tidal ranges, and entrance restrictions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

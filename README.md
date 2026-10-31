@@ -1,124 +1,235 @@
-# Helm.Ports — World Maritime Ports Explorer
+# ⚓ Helm.Ports — World Maritime Ports Explorer
 
-A high-performance, interactive web visualization and querying system for **5,410 worldwide maritime ports and anchorages**, derived from the NGA Publication 150 *World Port Index* (2019 edition).
+<p align="center">
+  <img src="public/logo.svg" alt="Helm.Ports logo" width="96" height="96">
+</p>
 
-This project is a modern full-stack remake designed to run seamlessly as a lightweight, lightning-fast application powered by **React 19**, **Vite**, **Express**, and **Tailwind CSS v4**.
+<p align="center">
+  <strong>Interactive exploration of 5,410 worldwide maritime ports & anchorages</strong><br>
+  Derived from the NGA Publication 150 <em>World Port Index</em> (2019 edition)
+</p>
 
----
-
-## What This Remake Achieves
-
-1. **Standalone Full-Stack Architecture**: Replaces monolithic framework overhead with a nimble Node.js/Express backend (`server.ts`) and Vite client, hosting both API and frontend on port 3000.
-2. **Sub-millisecond In-Memory Query Engine**: 5,410 port records (~3.3 MB JSON) are parsed once and held in module cache. Filter, search, and sort operations execute in 1–3 ms without database lockups.
-3. **Compact Level-of-Detail (LOD) World Map**: Custom equirectangular SVG world map with 4-tier Level of Detail. Instead of streaming 3.3 MB to the client for maps, the backend provides an ultra-compact payload (`format=points`, ~150 KB) that renders instantly with zero external tile dependencies.
-4. **Comprehensive Navigational Screening**: Instant filtering by country, port size, maximum vessel draft/size, channel depth sounding, mean tidal range window, and entrance restrictions (tide, swell, ice, other).
-5. **Modern Design Constitution**: Accessible dark/light theming, responsive layout with mobile drawer filters, null-safe sorting, and instant port detail slide-overs.
-
----
-
-## Tech Stack
-
-- **Runtime & Language**: Node.js 20+ / TypeScript 5+ (ES2022, ESM)
-- **Frontend**: React 19, `@tanstack/react-query` v5, Lucide React icons
-- **Styling**: Tailwind CSS v4 (`@tailwindcss/vite`), Radix UI primitives (`@radix-ui/react-*`), `clsx`, `tailwind-merge`
-- **Backend & Middleware**: Express 4, Vite middleware mode (`vite.middlewares`), tsx execution
-- **Map & Geography**: Equirectangular Natural Earth vector paths (`public/land.json`), SVG projection with viewport culling
+<p align="center">
+  <img alt="React 19" src="https://img.shields.io/badge/React_19-Vite_8-61DAFB?style=flat-square&logo=react&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white">
+  <img alt="Express" src="https://img.shields.io/badge/Express-4-000000?style=flat-square&logo=express&logoColor=white">
+  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-v4-0EA5E9?style=flat-square&logo=tailwindcss&logoColor=white">
+  <img alt="Query performance" src="https://img.shields.io/badge/queries-1–3.5_ms_in--memory-0D9488?style=flat-square">
+  <img alt="Dataset" src="https://img.shields.io/badge/data-NGA_WPI_2019-informational?style=flat-square">
+</p>
 
 ---
 
-## Quick Start
+## Why Helm.Ports?
 
-### 1. Prerequisites
-- Node.js 20.x or higher
-- npm 10.x or higher
+Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a lightweight full-stack explorer that delivers:
 
-### 2. Installation
+| Capability | Benefit |
+|------------|---------|
+| **In-memory query engine** | Filter, search & sort 5,410 records in 1–3.5 ms — no database |
+| **LOD world map** | Custom SVG map, ~150 KB points payload (~45 KB gzipped), zero tile services or API keys |
+| **Navigational screening** | Channel depth, tidal range, vessel size & entrance restrictions at a glance |
+| **Self-contained cartography** | Natural Earth coastlines served locally — fully offline-capable |
+| **Modern UX** | Dark/light/system themes, mobile drawer, instant detail sheets, null-safe sorting |
+
+---
+
+## ✨ Features
+
+<details>
+<summary>🔍 Omni-Search & Filters</summary>
+
+- Search across port name, country, state/province, point of interest, and WPI ID
+- Multi-select facets: country • port size • max vessel size
+- Minimum channel-depth sounding filter
+- Dual-handle tidal-range window
+- Entrance-restriction toggles: tide • heavy swell • ice • other
+
+</details>
+
+<details>
+<summary>🗺️ Interactive SVG Map with Level-of-Detail</summary>
+
+| Zoom | Visible ports |
+|------|---------------|
+| 1×   | Tier 1 — major international hubs (~160) |
+| 2×+  | + Tier 2 — small / regional ports (~1,137) |
+| 4×+  | + Tier 3 — minor ports (~1,499) |
+| 8×+  | + Tier 4 — very small ports & anchorages (all 5,410) |
+
+Dots are colored by maximum channel depth:
+
+`<5 m` · `5–10 m` · `10–15 m` · `15–20 m` · `20 m+` · `no data` (gray)
+
+Viewport culling and selected-port highlighting run on every pan/zoom frame.
+
+</details>
+
+<details>
+<summary>📋 Table & Detail Views</summary>
+
+- Sortable, paginated table (10–100 rows per page) with **null-safe ordering** — missing soundings always sort last
+- Slide-over detail sheet with all soundings: channel, anchorage, cargo pier, oil terminal
+- Restriction badges and tidal-range display
+
+</details>
+
+<details>
+<summary>🎨 Modern Design System</summary>
+
+- Light / dark / system theme with persistent storage
+- Responsive layout: sticky sidebar ≥ 1024 px, collapsible filter drawer with active-filter badge below
+- Radix UI primitives + Tailwind CSS v4 OKLCH design tokens
+- Accessible: keyboard-navigable controls, aria labels, WCAG AA contrast in both themes
+
+</details>
+
+---
+
+## 🚀 Quick Start
+
+**Prerequisites:** Node.js 20+ and npm 10+
+
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-### 3. Development
-Start the unified full-stack server (runs Express API + Vite dev middleware on port 3000):
-```bash
+# 2. Development — Express API + Vite HMR on a single port
 npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+# → http://localhost:3000
 
-### 4. Build & Production
-```bash
-# Build production client bundle
+# 3. Production
 npm run build
-
-# Start production server
 npm start
-```
 
-### 5. Type Checking & Verification
-```bash
-# Verify TypeScript without emitting files
+# 4. Type-check (tsc --noEmit)
 npm run lint
-
-# Verify full compilation
-npm run build
 ```
 
 ---
 
-## Project Structure
+## 🏗️ Architecture at a Glance
 
+```text
+                 ┌──────────────────────────┐
+                 │       Web Browser        │
+                 └────────────┬─────────────┘
+                              │ HTTP :3000
+                              ▼
+                 ┌──────────────────────────┐
+                 │   server.ts (Express)    │
+                 └─────┬──────────────┬─────┘
+                       │              │
+               /api/* routes     Vite middleware
+                       │              │
+                       ▼              ▼
+          ┌────────────────────┐  ┌─────────────────────────┐
+          │  src/lib/ports.ts  │  │       React 19 SPA      │
+          │  in-memory engine  │  │  • PortMap (SVG + LOD)  │
+          └─────────┬──────────┘  │  • PortsTable           │
+                    │             │  • FilterSidebar        │
+                    ▼             │  • PortDetailSheet      │
+          ┌────────────────────┐  └─────────────────────────┘
+          │  data/ports.json   │
+          │  (5,410 records)   │
+          └────────────────────┘
 ```
-├── data/
-│   └── ports.json                 # NGA World Port Index (5,410 port records)
-├── docs/
-│   └── architecture.md            # In-depth architectural & design documentation
+
+**Key design decisions:**
+
+- **Single process, single port** → no CORS friction, simple deployment
+- **Full dataset cached in the V8 heap (~3.3 MB)** → sub-5 ms queries with zero database overhead
+- **Compact `format=points` payload + viewport culling** → smooth map panning at any zoom
+- **Static Natural Earth SVG paths** → no Mapbox/Leaflet tile services, no API keys, offline-friendly
+
+See [docs/architecture.md](docs/architecture.md) for the full deep-dive.
+
+---
+
+## 📡 API Overview
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/ports` | Filtered, sorted, paginated list — or `?format=points` for the compact map payload |
+| `GET /api/ports/:id` | Single port by WPI ID |
+| `GET /api/stats` | Aggregates: country counts, port/vessel size distributions, depth bins |
+
+Common query parameters:
+
+| Parameter | Example | Notes |
+|-----------|---------|-------|
+| `q` | `rotterdam` | Omni-search (name, country, state, POI, WPI ID) |
+| `country` | `Netherlands,Japan` | Comma-separated multi-select |
+| `portSize` / `vesselSize` | `Large,Medium` | Multi-select facets |
+| `minChannelDepth` | `10` | Minimum channel sounding (m) |
+| `minTidalRange` / `maxTidalRange` | `0.5` / `3` | Tidal window (m) |
+| `restriction` | `tide,ice` | `tide`, `swell`, `ice`, `other` |
+| `sort` / `order` | `channel_depth_max_m` / `desc` | Nulls always sort last |
+| `page` / `pageSize` | `1` / `25` | `pageSize` clamped to 10–100 |
+
+---
+
+## 📁 Project Structure
+
+<details>
+<summary>Expand directory layout</summary>
+
+```text
+├── data/ports.json               # NGA World Port Index (5,410 records)
+├── docs/architecture.md          # Full system design deep-dive
 ├── public/
-│   ├── land.json                  # Natural Earth coastline vectors (1000x500 viewBox)
-│   ├── logo.svg                   # Nautical compass / anchor branding
-│   └── robots.txt
+│   ├── land.json                 # Natural Earth coastline vectors
+│   └── logo.svg                  # Nautical branding
 ├── src/
-│   ├── components/
-│   │   ├── ports/
-│   │   │   ├── FilterSidebar.tsx  # Multi-faceted filter panel with sliders & badges
-│   │   │   ├── PortDetailSheet.tsx# Slide-over sheet displaying all sounding depths & metadata
-│   │   │   ├── PortMap.tsx        # Interactive SVG map with zoom, drag, LOD, tooltips
-│   │   │   ├── PortsTable.tsx     # Paginated, sortable data table with restriction badges
-│   │   │   └── types.ts           # Shared TypeScript interfaces & helper functions
-│   │   ├── theme-provider.tsx     # Client-side dark/light theme provider & hook
-│   │   └── ui/                    # Accessible UI primitives (button, sheet, table, etc.)
-│   ├── lib/
-│   │   ├── ports.ts               # Core data layer: parsing, country normalization, ranks
-│   │   └── utils.ts               # Tailwind cn helper utility
-│   ├── App.tsx                    # Top-level application component
-│   ├── index.css                  # Global Tailwind v4 styles and theme tokens
-│   └── main.tsx                   # React root entry point
-├── AGENTS.md                      # AI coding agent rules, conventions, and guidelines
-├── CONTRIBUTING.md                # Contribution workflow & guidelines
-├── index.html                     # HTML shell and metadata
-├── package.json                   # Dependencies and scripts
-├── server.ts                      # Express API server + Vite middleware
-├── tsconfig.json                  # TypeScript compiler settings
-└── vite.config.ts                 # Vite bundler configuration
+│   ├── components/ports/         # PortMap, PortsTable, FilterSidebar, PortDetailSheet
+│   ├── components/ui/             # Accessible UI primitives
+│   ├── lib/ports.ts              # Data layer + ranking helpers
+│   └── App.tsx
+├── server.ts                     # Express API + Vite middleware
+└── package.json
 ```
 
----
-
-## Core Features & Capabilities
-
-- **Omni-Search**: Search across port name, country, state/province, point of interest, and numeric WPI ID.
-- **Vessel Draft Screening**: Filter ports by minimum recorded channel sounding depth.
-- **Tidal Range Window**: Dual-handle slider to filter by mean tidal amplitude (meters).
-- **Entrance Restrictions**: Instant toggle for tidal, heavy swell, ice, and navigational restrictions.
-- **Level of Detail (LOD) Engine**:
-  - Zoom 1x: Major international shipping hubs only.
-  - Zoom 2x+: Secondary and regional ports.
-  - Zoom 4x+: Minor ports and coastal stations.
-  - Zoom 8x+: Very small ports and classified anchorages.
-- **Sounding Color Scale**: Visual depth classification across `<5m`, `5–10m`, `10–15m`, `15–20m`, and `20m+`.
+</details>
 
 ---
 
-## Data Source & Disclaimer
+## 📊 Data Source & Disclaimer
 
-- **Dataset**: Compiled from the National Geospatial-Intelligence Agency (NGA) Publication 150 *World Port Index* (2019 edition) via [tayljordan/ports](https://github.com/tayljordan/ports).
-- **Cartography**: Natural Earth admin-0 vector data (public domain).
-- **Disclaimer**: Sounding depths represent single recorded bathymetric observations and do not reflect real-time silting, dredging, or storm changes. **Never use for active maritime navigation.**
+- **Dataset:** NGA Publication 150 *World Port Index* (2019 edition), via [tayljordan/ports](https://github.com/tayljordan/ports)
+- **Cartography:** Natural Earth admin-0 vectors (public domain)
+
+> [!WARNING]
+> Soundings are single recorded observations. They do not reflect real-time silting, dredging, or weather.
+> **Never use this application for active maritime navigation.**
+
+---
+
+## 🗺️ Roadmap
+
+**Near-term (v1.1)**
+
+- [ ] URL query-parameter sync (shareable filtered views)
+- [ ] CSV / GeoJSON export of filtered results
+- [ ] Great-circle distance calculator between two ports
+
+**Mid-term (v1.2)**
+
+- [ ] Vessel draught + UKC clearance screener
+- [ ] Side-by-side port comparison
+- [ ] PWA / offline support
+
+See [TODO.md](TODO.md) for the full backlog.
+
+---
+
+## 🤝 Contributing
+
+We welcome improvements! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
+
+- Branch & Conventional Commit conventions
+- PR checklist (`npm run lint` + `npm run build` must pass)
+- Performance & accessibility expectations
+
+---
+
+<sub>Built for maritime curiosity • Powered by React 19 + Vite + Express</sub>

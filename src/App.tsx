@@ -23,7 +23,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeProvider, useTheme } from "@/components/theme-provider";
 import {
-  Anchor,
   Search,
   Github,
   Sun,
@@ -199,14 +198,14 @@ function PortsExplorer() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600 text-white shadow-sm shadow-teal-700/20">
-              <Anchor className="h-5 w-5" aria-hidden />
-            </div>
+            <a href="/" className="shrink-0" aria-label="Helm.Ports home">
+              <img
+                src="/logo.svg"
+                alt="Helm.Ports"
+                className="h-10 w-auto rounded-md"
+              />
+            </a>
             <div>
-              <p className="text-base font-bold leading-tight tracking-tight text-foreground flex items-center">
-                <span>Helm</span>
-                <span className="text-teal-600 dark:text-teal-400">.Ports</span>
-              </p>
               <p className="hidden text-xs text-muted-foreground sm:block">
                 World Port Index · NGA Pub. 150
               </p>

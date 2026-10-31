@@ -1,7 +1,7 @@
 # ⚓ Helm.Ports — World Maritime Ports Explorer
 
 <p align="center">
-  <img src="public/logo.svg" alt="Helm.Ports logo" width="96" height="96">
+  <img src="public/logo.svg" alt="Helm.Ports logo" width="420">
 </p>
 
 <p align="center">

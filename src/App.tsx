@@ -202,7 +202,7 @@ function PortsExplorer() {
               <img
                 src="/logo.svg"
                 alt="Helm.Ports"
-                className="h-10 w-auto rounded-md"
+                className="h-10 w-auto rounded-md dark:invert dark:hue-rotate-180"
               />
             </a>
             <div>

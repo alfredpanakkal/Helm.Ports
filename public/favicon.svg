@@ -1,9 +1,9 @@
-<!-- Helm brand mark: black tile with letters cut out over a #FDFDFD backing. Dark-mode aware: tile flips to #0f172a with white letters via prefers-color-scheme. -->
+<!-- Helm brand mark: black tile with letters cut out over a #FDFDFD backing. Dark-mode aware: tile flips to the inverse mark (#FDFDFD tile, #0f172a letters) via prefers-color-scheme. -->
 <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="1295" height="1215" viewBox="0 0 1295 1215" preserveAspectRatio="xMidYMid meet">
   <style>
     .helm-tile { fill: #000000; }
     .helm-back { fill: #FDFDFD; }
-    @media (prefers-color-scheme: dark) { .helm-tile { fill: #0f172a; } .helm-back { fill: #FFFFFF; } }
+    @media (prefers-color-scheme: dark) { .helm-tile { fill: #FDFDFD; } .helm-back { fill: #0f172a; } }
   </style>
 <rect x="0" y="0" width="1295" height="1215" fill="#FDFDFD" class="helm-back"/>
 <g transform="translate(0.000000,1215.000000) scale(0.100000,-0.100000)"

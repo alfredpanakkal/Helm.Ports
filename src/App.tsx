@@ -210,8 +210,11 @@ function PortsExplorer() {
               </svg>
             </a>
             <div>
-              <p className="hidden text-xs text-muted-foreground sm:block">
-                World Port Index · NGA Pub. 150
+              <p
+                className="hidden text-sm font-semibold tracking-wide text-foreground sm:block"
+                style={{ fontFamily: "Cinzel, serif" }}
+              >
+                HELM.PORTS
               </p>
             </div>
           </div>

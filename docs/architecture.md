@@ -119,7 +119,7 @@ JSON Response: { total: 1, page: 1, pageSize: 25, items: [ ... ] }
 ```
 
 ### Port Detail Astronomy Flow
-``
+```
 User opens [PortDetailSheet]
            |
            v
@@ -142,7 +142,7 @@ JSON Response: { sunrise, solar_noon, nautical_twilight_begin/end, moon_phase, .
            |
            v
 [AstronomyCard] renders Merpas, sunrise/sunset, twilight, moon data in port-local times
-``
+```
 
 ### Map View Flow
 ```

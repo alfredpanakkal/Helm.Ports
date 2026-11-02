@@ -16,7 +16,6 @@ import { AstronomyCard } from "./AstronomyCard";
 import { TimezoneCard } from "./TimezoneCard";
 import { WeatherCard } from "./WeatherCard";
 import { TideCard } from "./TideCard";
-import { PortWatchCard } from "./PortWatchCard";
 import { formatRange, type Port } from "./types";
 
 interface Props {
@@ -118,8 +117,6 @@ function PortDetailBody({ port }: { port: Port }) {
           }
         />
       </div>
-
-      <PortWatchCard port={port} />
 
       <TideCard latitude={port.latitude} longitude={port.longitude} />
 

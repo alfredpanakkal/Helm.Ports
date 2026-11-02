@@ -16,6 +16,8 @@
  * coordinate lookup is nearest-city approximation, so it stays the
  * fallback rather than the primary. Hourora provides no start time for
  * the current offset period, so periodStart is null on that path.
+ * Successful fallback results are cached like primary ones, so an
+ * outage costs at most one Hourora call pair per coordinate cell.
  */
 
 export interface TimezoneData {
@@ -48,7 +50,8 @@ function cacheKey(lat: number, lng: number): string {
  */
 async function fetchTimezoneFromHourora(
   lat: number,
-  lng: number
+  lng: number,
+  key: string
 ): Promise<TimezoneData | null> {
   try {
     const lookupRes = await fetch(
@@ -65,7 +68,7 @@ async function fetchTimezoneFromHourora(
     if (!t?.zone) return null;
 
     const next = t.nextTransition;
-    return {
+    const data: TimezoneData = {
       zoneName: t.zone,
       abbreviation: t.abbreviation ?? "",
       gmtOffsetSec: (Number(t.offsetMinutes) || 0) * 60,
@@ -74,6 +77,8 @@ async function fetchTimezoneFromHourora(
       periodEnd: next?.unixMs ? Math.floor(next.unixMs / 1000) : 0,
       nextAbbreviation: next?.toAbbreviation ?? null,
     };
+    cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL_MS });
+    return data;
   } catch (err) {
     console.error("Error fetching timezone data from Hourora:", err);
     return null;
@@ -91,7 +96,7 @@ export async function fetchTimezone(
   const apiKey = process.env.TIMEZONEDB_API_KEY;
   if (!apiKey) {
     console.error("TIMEZONEDB_API_KEY is not configured; falling back to Hourora");
-    return fetchTimezoneFromHourora(lat, lng);
+    return fetchTimezoneFromHourora(lat, lng, key);
   }
 
   try {
@@ -111,7 +116,7 @@ export async function fetchTimezone(
     }
     const json = await res.json();
     if (json?.status !== "OK" || !json.zoneName) {
-      return fetchTimezoneFromHourora(lat, lng);
+      return fetchTimezoneFromHourora(lat, lng, key);
     }
 
     const data: TimezoneData = {
@@ -127,6 +132,6 @@ export async function fetchTimezone(
     return data;
   } catch (err) {
     console.error("Error fetching timezone data:", err);
-    return fetchTimezoneFromHourora(lat, lng);
+    return fetchTimezoneFromHourora(lat, lng, key);
   }
 }

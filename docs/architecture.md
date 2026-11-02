@@ -83,6 +83,14 @@ Helm.Ports is built as a unified, single-port full-stack web application. It com
   - Fast offline loading (120 KB JSON).
   - Perfect color control for light and dark themes using SVG fill and stroke tokens.
 
+### 2.5 Proxied Astronomy Data (SunriseSunset.io, 12 h Cache)
+- **Decision**: Port detail sheets show per-port sun/moon transit data (Merpas, nautical twilight, moon phase). Rather than calling the free SunriseSunset.io API from the browser, `server.ts` exposes `GET /api/astronomy?lat=&lng=`, which proxies `src/lib/astronomy.ts`.
+- **Rationale**:
+  - The upstream API is key-free but rate-limited like any public service — the proxy adds a 12-hour in-memory cache keyed on 2-decimal coordinates (~1 km cells, sufficient for transit times), so one upstream call per cell per half-day serves all visitors.
+  - The route sets `Cache-Control: public, max-age=300, s-maxage=43200`, letting the CDN (Vercel) extend the same 12 h window at the edge.
+  - Fail-closed contract: invalid coordinates \u2192 400, upstream failure \u2192 502, and **failed responses are never cached**, so a transient upstream error never blocks a port for 12 hours.
+  - Client uses TanStack Query (`staleTime` 30 min, 1 retry) with a skeleton fallback — no layout shift.
+
 ---
 
 ## 3. Data Flow & Request Lifecycle
@@ -109,6 +117,32 @@ JSON Response: { total: 1, page: 1, pageSize: 25, items: [ ... ] }
            ▼
 [PortsTable] renders rows; user clicks row -> opens [PortDetailSheet]
 ```
+
+### Port Detail Astronomy Flow
+\`\`
+User opens [PortDetailSheet]
+           |
+           v
+[AstronomyCard] creates query key: ['astronomy', lat.toFixed(2), lng.toFixed(2)]
+           |
+           v
+GET /api/astronomy?lat=...&lng=...   (staleTime: 30 min, retry: 1)
+           |
+           v
+[server.ts / api/index.ts] validates ranges -> src/lib/astronomy.ts
+           |
+           v
+Cache hit? --> 12 h in-memory Map (key: "lat,lng" at 2 decimals)
+  | no
+  v
+https://api.sunrisesunset.io/json?lat=...&lng=...  (no API key)
+           |
+           v
+JSON Response: { sunrise, solar_noon, nautical_twilight_begin/end, moon_phase, ... }
+           |
+           v
+[AstronomyCard] renders Merpas, sunrise/sunset, twilight, moon data in port-local times
+\`\`
 
 ### Map View Flow
 ```

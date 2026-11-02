@@ -14,7 +14,11 @@ const FEATURE_SERVER =
 
 export interface PortWatchInfo {
   portid: string | null;
+  portname: string | null;
+  country: string | null;
   locode: string | null;
+  lat: number | null;
+  lon: number | null;
   vesselTotal: number | null;
   vesselContainer: number | null;
   vesselDryBulk: number | null;
@@ -81,7 +85,11 @@ function toInfo(props: Record<string, unknown>): PortWatchInfo {
     typeof v === "number" && !isNaN(v) ? v : null;
   return {
     portid: text(props.portid),
+    portname: text(props.portname),
+    country: text(props.country),
     locode: text(props.LOCODE),
+    lat: num(props.lat),
+    lon: num(props.lon),
     vesselTotal: num(props.vessel_count_total),
     vesselContainer: num(props.vessel_count_container),
     vesselDryBulk: num(props.vessel_count_dry_bulk),

@@ -9,6 +9,13 @@
  * ports sharing a coordinate cell) never re-hit the upstream API.
  * Failures are not cached, so a transient upstream error never blocks a
  * port for half a day.
+ *
+ * If TimeZoneDB fails (missing key, rate limit, outage), the keyless
+ * Hourora API (https://hourora.app — no sign-up) is used as a fallback:
+ * coordinate lookup followed by the zone's clock-change data. Hourora's
+ * coordinate lookup is nearest-city approximation, so it stays the
+ * fallback rather than the primary. Hourora provides no start time for
+ * the current offset period, so periodStart is null on that path.
  */
 
 export interface TimezoneData {
@@ -16,7 +23,7 @@ export interface TimezoneData {
   abbreviation: string; // current zone abbreviation, e.g. "IST"
   gmtOffsetSec: number; // current UTC offset in seconds
   dstActive: boolean; // daylight saving currently in effect
-  periodStart: number; // unix seconds (UTC) when the current offset began
+  periodStart: number | null; // unix seconds (UTC) when the current offset began
   periodEnd: number; // unix seconds (UTC) when the next clock change occurs
   nextAbbreviation: string | null; // abbreviation after the next change
 }
@@ -35,6 +42,44 @@ function cacheKey(lat: number, lng: number): string {
   return lat.toFixed(2) + "," + lng.toFixed(2);
 }
 
+/**
+ * Fallback: resolve the zone via Hourora's coordinate lookup, then fetch
+ * the zone's clock-change data. Keyless; returns null on any failure.
+ */
+async function fetchTimezoneFromHourora(
+  lat: number,
+  lng: number
+): Promise<TimezoneData | null> {
+  try {
+    const lookupRes = await fetch(
+      "https://hourora.app/api/v1/lookup?lat=" + lat + "&lng=" + lng
+    );
+    if (!lookupRes.ok) return null;
+    const lookup = await lookupRes.json();
+    const zone = lookup?.zone;
+    if (!zone) return null;
+
+    const timeRes = await fetch("https://hourora.app/api/v1/time?tz=" + encodeURIComponent(zone));
+    if (!timeRes.ok) return null;
+    const t = await timeRes.json();
+    if (!t?.zone) return null;
+
+    const next = t.nextTransition;
+    return {
+      zoneName: t.zone,
+      abbreviation: t.abbreviation ?? "",
+      gmtOffsetSec: (Number(t.offsetMinutes) || 0) * 60,
+      dstActive: t.dst === true,
+      periodStart: null,
+      periodEnd: next?.unixMs ? Math.floor(next.unixMs / 1000) : 0,
+      nextAbbreviation: next?.toAbbreviation ?? null,
+    };
+  } catch (err) {
+    console.error("Error fetching timezone data from Hourora:", err);
+    return null;
+  }
+}
+
 export async function fetchTimezone(
   lat: number,
   lng: number
@@ -45,8 +90,8 @@ export async function fetchTimezone(
 
   const apiKey = process.env.TIMEZONEDB_API_KEY;
   if (!apiKey) {
-    console.error("TIMEZONEDB_API_KEY is not configured; timezone data unavailable");
-    return null;
+    console.error("TIMEZONEDB_API_KEY is not configured; falling back to Hourora");
+    return fetchTimezoneFromHourora(lat, lng);
   }
 
   try {
@@ -65,14 +110,16 @@ export async function fetchTimezone(
       return null;
     }
     const json = await res.json();
-    if (json?.status !== "OK" || !json.zoneName) return null;
+    if (json?.status !== "OK" || !json.zoneName) {
+      return fetchTimezoneFromHourora(lat, lng);
+    }
 
     const data: TimezoneData = {
       zoneName: json.zoneName,
       abbreviation: json.abbreviation ?? "",
       gmtOffsetSec: Number(json.gmtOffset) || 0,
       dstActive: json.dst === 1,
-      periodStart: Number(json.zoneStart) || 0,
+      periodStart: Number(json.zoneStart) || null,
       periodEnd: Number(json.zoneEnd) || 0,
       nextAbbreviation: json.nextAbbreviation ?? null,
     };
@@ -80,6 +127,6 @@ export async function fetchTimezone(
     return data;
   } catch (err) {
     console.error("Error fetching timezone data:", err);
-    return null;
+    return fetchTimezoneFromHourora(lat, lng);
   }
 }

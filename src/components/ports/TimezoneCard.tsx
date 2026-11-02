@@ -9,7 +9,7 @@ interface TimezoneData {
   abbreviation: string;
   gmtOffsetSec: number;
   dstActive: boolean;
-  periodStart: number;
+  periodStart: number | null;
   periodEnd: number;
   nextAbbreviation: string | null;
 }
@@ -113,7 +113,11 @@ export function TimezoneCard({ latitude, longitude }: Props) {
       <Row label="Daylight saving" value={dstText} />
       <Row
         label="Offset since"
-        value={localDate(data.periodStart, data.gmtOffsetSec)}
+        value={
+          data.periodStart != null
+            ? localDate(data.periodStart, data.gmtOffsetSec)
+            : "—"
+        }
       />
       <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
         Dates shown in the port's time zone. Powered by{" "}
@@ -125,7 +129,16 @@ export function TimezoneCard({ latitude, longitude }: Props) {
         >
           TimeZoneDB
         </a>
-        . Clock-change dates are indicative — not for navigation planning.
+        {" (with "}
+        <a
+          href="https://hourora.app"
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
+        >
+          Hourora
+        </a>
+        {" fallback)"}. Clock-change dates are indicative — not for navigation planning.
       </p>
     </div>
   );

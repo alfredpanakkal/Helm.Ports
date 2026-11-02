@@ -278,8 +278,15 @@ Common query parameters:
 
 See [TODO.md](TODO.md) for the full backlog.
 
----
+## 👤 Author
 
+**Alfred Jose** — developer & maintainer
+
+[![Portfolio](https://img.shields.io/badge/Portfolio-alfred--panakkal-2F6B4F?style=flat-square)](https://alfred-panakkal.vercel.app)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-in%2Falfredpanakkal-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alfredpanakkal/)
+[![GitHub](https://img.shields.io/badge/GitHub-@alfredpanakkal-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/alfredpanakkal)
+
+---
 ## 🤝 Contributing
 
 We welcome improvements! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
@@ -290,4 +297,4 @@ We welcome improvements! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 ---
 
-<sub>Built for maritime curiosity • Powered by React 19 + Vite + Express</sub>
+<sub>Built for maritime curiosity by <a href="https://alfred-panakkal.vercel.app">Alfred Jose</a> • Powered by React 19 + Vite + Express</sub>

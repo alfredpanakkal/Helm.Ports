@@ -46,6 +46,8 @@ function matchesQuery(p: PortRecord, q: string): boolean {
  *   GET /api/stats      - dataset aggregates for the filter sidebar
  *   GET /api/ports      - filtered, sorted, paginated list (?format=points for the map)
  *   GET /api/ports/:id  - single port by WPI ID
+ *   GET /api/weather    - current conditions + 7-day outlook (proxied Open-Meteo)
+ *   GET /api/marine     - sea state (proxied Open-Meteo Marine API)
  *
  * Shared by server.ts (local dev / self-hosting, single port with the Vite
  * middleware or static dist) and api/index.ts (Vercel serverless function).
@@ -261,6 +263,77 @@ export function buildApiApp(): ReturnType<typeof express> {
     } catch (err) {
       console.error("Error serving astronomy data:", err);
       res.status(500).json({ error: "Failed to serve astronomy data" });
+    }
+  });
+
+  // API Weather — current conditions + 7-day outlook (proxied Open-Meteo)
+  app.get("/api/weather", async (req: Request, res: Response) => {
+    try {
+      const lat = Number(req.query.lat);
+      const lng = Number(req.query.lng);
+      if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
+        res.status(400).json({ error: "Invalid coordinates" });
+        return;
+      }
+      const params = new URLSearchParams({
+        latitude: String(lat),
+        longitude: String(lng),
+        current:
+          "temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,pressure_msl",
+        daily:
+          "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+        wind_speed_unit: "kn",
+        timezone: "auto",
+        forecast_days: "7",
+      });
+      const upstream = await fetch(
+        "https://api.open-meteo.com/v1/forecast?" + params.toString()
+      );
+      if (!upstream.ok) {
+        res.status(502).json({ error: "Weather data temporarily unavailable" });
+        return;
+      }
+      res.set("Cache-Control", "public, max-age=300, s-maxage=1800");
+      res.json(await upstream.json());
+    } catch (err) {
+      console.error("Error serving weather data:", err);
+      res.status(500).json({ error: "Failed to serve weather data" });
+    }
+  });
+
+  // API Marine — sea state (proxied Open-Meteo Marine API)
+  app.get("/api/marine", async (req: Request, res: Response) => {
+    try {
+      const lat = Number(req.query.lat);
+      const lng = Number(req.query.lng);
+      if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
+        res.status(400).json({ error: "Invalid coordinates" });
+        return;
+      }
+      const params = new URLSearchParams({
+        latitude: String(lat),
+        longitude: String(lng),
+        current:
+          "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period,wind_wave_height,wind_wave_direction,wind_wave_period",
+        daily:
+          "wave_height_max,wave_direction_dominant,wave_period_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max,wind_wave_height_max,wind_wave_direction_dominant,wind_wave_period_max",
+        timezone: "auto",
+        forecast_days: "7",
+      });
+      const upstream = await fetch(
+        "https://marine-api.open-meteo.com/v1/marine?" + params.toString()
+      );
+      if (!upstream.ok) {
+        // Outside wave-model coverage is normal for inland ports; the
+        // client hides the section, so surface it as unavailable, not 500
+        res.status(502).json({ error: "Marine data unavailable for this location" });
+        return;
+      }
+      res.set("Cache-Control", "public, max-age=300, s-maxage=1800");
+      res.json(await upstream.json());
+    } catch (err) {
+      console.error("Error serving marine data:", err);
+      res.status(500).json({ error: "Failed to serve marine data" });
     }
   });
 

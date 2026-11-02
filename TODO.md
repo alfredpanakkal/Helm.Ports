@@ -41,5 +41,11 @@ This document tracks planned features, enhancements, and technical debt items fo
 - [x] Normalize 220 raw WPI country abbreviations into 209 canonical country names.
 - [x] Configure Tailwind CSS v4 OKLCH token system.
 - [x] Add per-port Solar & Lunar transit panel (Merpas, nautical twilight, moon phase) via `GET /api/astronomy` with 12 h caching.
-- [ ] Add automated unit tests with `node:test` covering `src/lib/ports.ts` filtering and sorting invariants.
+- [x] Add automated unit tests with `node:test` covering `src/lib/ports.ts` filtering and sorting invariants. (Wired into `npm test`; `src/lib/contrast.test.ts` additionally pins WCAG AA pairs for the moss palette.)
 - [ ] Add Playwright browser test suite for pan/zoom interactions and filter drawer on mobile viewports.
+
+- [ ] **Moss harmonization follow-ups (deferred from the palette PR)**:
+  - Recolour the MapLibre layer paints in `src/map/config.ts` (blue `#0b6ea8` dots, amber clusters) to the moss palette.
+  - Replace the List/Map toggle pill gradient (hard-coded `from-[#DDEFE0] to-[#E9F6CE]` / dark equivalents) with semantic tokens.
+  - Fix table column overflow on small screens and align the mobile/desktop explorer layout.
+  - Re-token the legacy SVG map depth ramp (`depthColor()` in `src/components/ports/types.ts`).

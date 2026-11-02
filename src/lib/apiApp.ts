@@ -3,6 +3,7 @@ import {
   getPorts,
   getMetadata,
   getCountryCounts,
+  getCountries,
   portTier,
   portSizeRank,
   vesselSizeRank,
@@ -45,12 +46,13 @@ function matchesQuery(p: PortRecord, q: string): boolean {
  * Builds the Express application exposing the Helm.Ports JSON API:
  *
  *   GET /api/stats      - dataset aggregates for the filter sidebar
- *   GET /api/ports      - filtered, sorted, paginated list (?format=points for the map)
+ *   GET /api/ports      - filtered, sorted, paginated list (?format=points
+ *                         for the map, ?format=countries for the world view)
  *   GET /api/ports/:id  - single port by WPI ID
  *   GET /api/weather    - current conditions + 7-day outlook (proxied Open-Meteo)
  *   GET /api/marine     - sea state (proxied Open-Meteo Marine API)
- *   GET /api/timezone  - zone, UTC offset & DST calendar (proxied TimeZoneDB)
- *   GET /api/tide     - hourly sea level incl. tides (proxied Open-Meteo Marine)
+ *   GET /api/timezone   - zone, UTC offset & DST calendar (proxied TimeZoneDB)
+ *   GET /api/tide       - hourly sea level incl. tides (proxied Open-Meteo Marine)
  *
  * Shared by server.ts (local dev / self-hosting, single port with the Vite
  * middleware or static dist) and api/index.ts (Vercel serverless function).
@@ -124,6 +126,17 @@ export function buildApiApp(): ReturnType<typeof express> {
   // API Ports Search & Filter
   app.get("/api/ports", (req: Request, res: Response) => {
     try {
+      const format = req.query.format;
+
+      // Country index for the MapLibre world view: one entry per
+      // port-having country (dot position, bounds, port count, ISO2).
+      // Small and cacheable, so no pagination or filtering applies.
+      if (format === "countries") {
+        res.set("Cache-Control", "public, max-age=300, s-maxage=43200");
+        res.json({ countries: getCountries() });
+        return;
+      }
+
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
       const countries = parseList(req.query.country);
       const portSizes = parseList(req.query.portSize);
@@ -136,7 +149,6 @@ export function buildApiApp(): ReturnType<typeof express> {
       const order = req.query.order === "desc" ? -1 : 1;
       const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10) || 1);
       const pageSize = Math.min(100, Math.max(10, parseInt(String(req.query.pageSize ?? "25"), 10) || 25));
-      const format = req.query.format;
 
       const all = getPorts();
       const countrySet = countries.length ? new Set(countries) : null;
@@ -212,6 +224,7 @@ export function buildApiApp(): ReturnType<typeof express> {
           lo: p.longitude,
           d: p.channel_depth_max_m,
           t: portTier(p.port_size),
+          u: p.unlocode,
         }));
         res.json({ total, points });
         return;
@@ -247,7 +260,7 @@ export function buildApiApp(): ReturnType<typeof express> {
     }
   });
 
-  // API Astronomy — Sun & Moon transit times for a port's coordinates
+  // API Astronomy - Sun & Moon transit times for a port's coordinates
   app.get("/api/astronomy", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
@@ -269,7 +282,7 @@ export function buildApiApp(): ReturnType<typeof express> {
     }
   });
 
-  // API Timezone — zone, UTC offset & DST calendar for a port's coordinates
+  // API Timezone - zone, UTC offset & DST calendar for a port's coordinates
   app.get("/api/timezone", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
@@ -291,7 +304,7 @@ export function buildApiApp(): ReturnType<typeof express> {
     }
   });
 
-  // API Tide — hourly sea level height including tides (proxied Open-Meteo Marine)
+  // API Tide - hourly sea level height including tides (proxied Open-Meteo Marine)
   app.get("/api/tide", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
@@ -324,7 +337,7 @@ export function buildApiApp(): ReturnType<typeof express> {
     }
   });
 
-  // API Weather — current conditions + 7-day outlook (proxied Open-Meteo)
+  // API Weather - current conditions + 7-day outlook (proxied Open-Meteo)
   app.get("/api/weather", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
@@ -359,7 +372,7 @@ export function buildApiApp(): ReturnType<typeof express> {
     }
   });
 
-  // API Marine — sea state (proxied Open-Meteo Marine API)
+  // API Marine - sea state (proxied Open-Meteo Marine API)
   app.get("/api/marine", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);

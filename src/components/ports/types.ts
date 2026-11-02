@@ -21,6 +21,7 @@ export interface Port {
   max_vessel_size: string | null;
   point_of_interest: string | null;
   port_size: string | null;
+  unlocode: string | null;
 }
 
 export interface MapPoint {
@@ -31,6 +32,7 @@ export interface MapPoint {
   lo: number;
   d: number | null;
   t: number; // LOD tier 1-4 (from port_size)
+  u: string | null; // UN/LOCODE (null until the join script has run)
 }
 
 export interface Stats {

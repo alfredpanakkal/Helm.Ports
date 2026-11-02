@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { countryGeometry } from "./bounds.ts";
+import { getCountryIso2 } from "./countryCodes.ts";
 
 export interface PortRecord {
   wpi_port_id: number;
@@ -25,6 +27,7 @@ export interface PortRecord {
   max_vessel_size: string | null;
   point_of_interest: string | null;
   port_size: string | null;
+  unlocode: string | null;
 }
 
 export interface PortsMetadata {
@@ -34,7 +37,7 @@ export interface PortsMetadata {
   source: string;
 }
 
-/** WPI-style abbreviations → clean country names (merging variants). */
+/** WPI-style abbreviations -> clean country names (merging variants). */
 const COUNTRY_FIXES: Record<string, string> = {
   "U.S.A.": "United States",
   "U.K.": "United Kingdom",
@@ -68,6 +71,7 @@ const VESSEL_SIZE_ORDER: Record<string, number> = {
 let cachedPorts: PortRecord[] | null = null;
 let cachedMetadata: PortsMetadata | null = null;
 let cachedCountryCounts: [string, number][] | null = null;
+let cachedCountries: CountryEntry[] | null = null;
 
 function normalizePort(raw: Record<string, unknown>): PortRecord {
   const country = COUNTRY_FIXES[String(raw.country)] ?? String(raw.country ?? "Unknown");
@@ -94,6 +98,7 @@ function normalizePort(raw: Record<string, unknown>): PortRecord {
     max_vessel_size: (raw.max_vessel_size as string | null) ?? null,
     point_of_interest: (raw.point_of_interest as string | null) ?? null,
     port_size: (raw.port_size as string | null) ?? null,
+    unlocode: (raw.unlocode as string | null) ?? null,
   };
 }
 
@@ -145,9 +150,51 @@ export function getCountryCounts(): [string, number][] {
   return cachedCountryCounts;
 }
 
+export interface CountryEntry {
+  name: string;
+  /** ISO 3166-1 alpha-2 code (null when unknown - URLs fall back to the name). */
+  cc: string | null;
+  count: number;
+  /** Mean port position [lon, lat] - the world-view dot. */
+  center: [number, number];
+  /** Bounding box [[w, s], [e, n]] - wraps the antimeridian when needed. */
+  bounds: [[number, number], [number, number]];
+}
+
+/**
+ * One entry per port-having country, for the MapLibre world view. Computed
+ * once in memory (like getCountryCounts) so it always matches ports.json
+ * with no build step. Bounds wrap across the antimeridian (Russia, Fiji,
+ * USA with the Aleutians) so fitBounds stays contiguous.
+ */
+export function getCountries(): CountryEntry[] {
+  if (cachedCountries) return cachedCountries;
+  const byCountry = new Map<string, PortRecord[]>();
+  for (const p of getPorts()) {
+    const arr = byCountry.get(p.country);
+    if (arr) arr.push(p);
+    else byCountry.set(p.country, [p]);
+  }
+  const entries: CountryEntry[] = [];
+  for (const [name, ports] of byCountry) {
+    const geo = countryGeometry(ports);
+    if (!geo) continue;
+    entries.push({
+      name,
+      cc: getCountryIso2(name),
+      count: ports.length,
+      center: geo.center,
+      bounds: geo.bounds,
+    });
+  }
+  entries.sort((a, b) => a.name.localeCompare(b.name));
+  cachedCountries = entries;
+  return entries;
+}
+
 /**
  * Zoom-based level-of-detail (LOD) tier for a port.
- * Tier 1 = Major … tier 4 = Very Small / unclassified. Lower tiers stay
+ * Tier 1 = Major ... tier 4 = Very Small / unclassified. Lower tiers stay
  * visible at lower zoom; higher tiers are only drawn once you zoom in.
  */
 const PORT_SIZE_TIER: Record<string, number> = {

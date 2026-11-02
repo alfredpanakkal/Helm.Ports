@@ -13,7 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Anchor, Ruler, Waves } from "lucide-react";
 import { AstronomyCard } from "./AstronomyCard";
+import { TimezoneCard } from "./TimezoneCard";
 import { WeatherCard } from "./WeatherCard";
+import { TideCard } from "./TideCard";
 import { formatRange, type Port } from "./types";
 
 interface Props {
@@ -114,9 +116,13 @@ function PortDetailBody({ port }: { port: Port }) {
         />
       </div>
 
+      <TideCard latitude={port.latitude} longitude={port.longitude} />
+
       <WeatherCard latitude={port.latitude} longitude={port.longitude} />
 
       <AstronomyCard latitude={port.latitude} longitude={port.longitude} />
+
+      <TimezoneCard latitude={port.latitude} longitude={port.longitude} />
 
       <Separator />
 

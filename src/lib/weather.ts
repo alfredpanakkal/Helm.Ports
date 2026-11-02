@@ -71,3 +71,131 @@ export async function fetchPortWeather(
     daily: days,
   };
 }
+
+export interface MarineWaveState {
+  height: number | null; // metres
+  direction: number | null; // degrees from north
+  period: number | null; // seconds
+}
+
+export interface MarineCurrent {
+  combined: MarineWaveState;
+  swell: MarineWaveState;
+  wind: MarineWaveState;
+}
+
+export interface MarineDay {
+  date: string; // YYYY-MM-DD, port-local
+  combined: MarineWaveState;
+  swell: MarineWaveState;
+  wind: MarineWaveState;
+}
+
+export interface PortMarine {
+  current: MarineCurrent | null;
+  days: MarineDay[];
+}
+
+function waveState(
+  height: number | null | undefined,
+  direction: number | null | undefined,
+  period: number | null | undefined
+): MarineWaveState {
+  return {
+    height: height ?? null,
+    direction: direction ?? null,
+    period: period ?? null,
+  };
+}
+
+/**
+ * Sea state for a port's coordinates via the free Open-Meteo Marine API
+ * (marine-api.open-meteo.com, keyless). Wave models only cover open and
+ * coastal waters, so inland/river ports often have no data. Returns null
+ * for "no data here" and for any upstream error — callers must simply
+ * hide the section, never treat it as an error state.
+ */
+export async function fetchMarineWeather(
+  latitude: number,
+  longitude: number
+): Promise<PortMarine | null> {
+  const params = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    current:
+      "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period,wind_wave_height,wind_wave_direction,wind_wave_period",
+    daily:
+      "wave_height_max,wave_direction_dominant,wave_period_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max,wind_wave_height_max,wind_wave_direction_dominant,wind_wave_period_max",
+    timezone: "auto",
+    forecast_days: "7",
+  });
+
+  try {
+    const res = await fetch(
+      "https://marine-api.open-meteo.com/v1/marine?" + params.toString()
+    );
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    const current = json?.current ?? {};
+    const daily = json?.daily ?? {};
+
+    const hasData =
+      current.wave_height != null ||
+      current.swell_wave_height != null ||
+      current.wind_wave_height != null ||
+      current.wave_period != null ||
+      current.swell_wave_period != null ||
+      current.wind_wave_period != null ||
+      (daily.wave_height_max ?? []).some((v: number | null) => v != null);
+    if (!hasData) return null;
+
+    const days: MarineDay[] = (daily.time ?? []).map(
+      (date: string, i: number): MarineDay => ({
+        date,
+        combined: waveState(
+          daily.wave_height_max?.[i],
+          daily.wave_direction_dominant?.[i],
+          daily.wave_period_max?.[i]
+        ),
+        swell: waveState(
+          daily.swell_wave_height_max?.[i],
+          daily.swell_wave_direction_dominant?.[i],
+          daily.swell_wave_period_max?.[i]
+        ),
+        wind: waveState(
+          daily.wind_wave_height_max?.[i],
+          daily.wind_wave_direction_dominant?.[i],
+          daily.wind_wave_period_max?.[i]
+        ),
+      })
+    );
+
+    return {
+      current:
+        current.time != null
+          ? {
+              combined: waveState(
+                current.wave_height,
+                current.wave_direction,
+                current.wave_period
+              ),
+              swell: waveState(
+                current.swell_wave_height,
+                current.swell_wave_direction,
+                current.swell_wave_period
+              ),
+              wind: waveState(
+                current.wind_wave_height,
+                current.wind_wave_direction,
+                current.wind_wave_period
+              ),
+            }
+          : null,
+      days,
+    };
+  } catch {
+    // An upstream failure is indistinguishable from "no data" for the UI
+    return null;
+  }
+}

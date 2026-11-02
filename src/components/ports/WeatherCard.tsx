@@ -3,8 +3,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CloudSun, RotateCcw } from "lucide-react";
-import { fetchPortWeather } from "@/lib/weather";
+import { CloudSun, RotateCcw, Waves } from "lucide-react";
+import {
+  fetchPortWeather,
+  fetchMarineWeather,
+  type MarineWaveState,
+} from "@/lib/weather";
 import { describeWeather } from "./weatherCodes";
 
 interface Props {
@@ -17,6 +21,14 @@ const COMPASS_POINTS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
 function compassPoint(deg: number): string {
   const normalized = ((deg % 360) + 360) % 360;
   return COMPASS_POINTS[Math.round(normalized / 45) % 8];
+}
+
+function waveText(w: MarineWaveState): string {
+  const parts: string[] = [];
+  if (w.height != null) parts.push(w.height.toFixed(1) + " m");
+  if (w.direction != null) parts.push(compassPoint(w.direction));
+  if (w.period != null) parts.push(w.period.toFixed(0) + " s");
+  return parts.length > 0 ? parts.join(" · ") : "—";
 }
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -53,6 +65,14 @@ export function WeatherCard({ latitude, longitude }: Props) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["weather", latitude.toFixed(2), longitude.toFixed(2)],
     queryFn: () => fetchPortWeather(latitude, longitude),
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    enabled: hasCoords,
+  });
+
+  const marine = useQuery({
+    queryKey: ["marine", latitude.toFixed(2), longitude.toFixed(2)],
+    queryFn: () => fetchMarineWeather(latitude, longitude),
     staleTime: 30 * 60 * 1000,
     retry: 1,
     enabled: hasCoords,
@@ -140,6 +160,23 @@ export function WeatherCard({ latitude, longitude }: Props) {
             " rain"
           }
         />
+      )}
+
+      {marine.data?.current && (
+        <div className="mt-2">
+          <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <Waves className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Sea state
+          </h4>
+          <Row label="Sea" value={waveText(marine.data.current.combined)} />
+          <Row label="Swell" value={waveText(marine.data.current.swell)} />
+          <Row label="Wind sea" value={waveText(marine.data.current.wind)} />
+          {marine.data.days[0] && (
+            <Row
+              label="Today max sea"
+              value={waveText(marine.data.days[0].combined)}
+            />
+          )}
+        </div>
       )}
 
       <div className="mt-3 grid grid-cols-7 gap-1">

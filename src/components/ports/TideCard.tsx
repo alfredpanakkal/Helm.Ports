@@ -216,7 +216,7 @@ export function TideCard({ latitude, longitude }: Props) {
             label="Lowest low"
             value={heightLabel(low.height, unit) + " at " + fmtTime(low.minutes)}
           />
-          <Row label="Range" value={heightLabel(range, unit)} />
+          <Row label="Range" value={heightLabel(high.height - low.height, unit)} />
           <Button
             variant="outline"
             size="sm"

@@ -44,7 +44,7 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 │   ├── components/
 │   │   ├── ports/
 │   │   │   ├── FilterSidebar.tsx  # Search/filter controls (country, depths, tides, restrictions)
-│   │   ├── AstronomyCard.tsx      # Sun/moon transit panel (Merpas, twilight, moon phase)
+│   │   │   ├── AstronomyCard.tsx  # Sun/moon transit panel (Merpas, twilight, moon phase)
 │   │   │   ├── PortDetailSheet.tsx# Detailed slide-over view for individual port
 │   │   │   ├── PortMap.tsx        # Interactive SVG map, LOD rendering, projection
 │   │   │   ├── PortsTable.tsx     # Paginated and sortable table

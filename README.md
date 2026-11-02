@@ -27,9 +27,9 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 | Capability | Benefit |
 |------------|---------|
 | **In-memory query engine** | Filter, search & sort 5,410 records in 1–3.5 ms — no database |
-| **LOD world map** | Custom SVG map, ~150 KB points payload (~45 KB gzipped), zero tile services or API keys |
+| **Dual world map** | MapLibre GL on OpenStreetMap tiles by default; legacy self-contained SVG renderer with ~150 KB points payload — zero tile services, offline-capable |
 | **Navigational screening** | Channel depth, tidal range, vessel size & entrance restrictions at a glance |
-| **Self-contained cartography** | Natural Earth coastlines served locally — fully offline-capable |
+| **Live conditions per port** | Weather, sea state, tides and local time via key-free Open-Meteo proxies |
 | **Modern UX** | Dark/light/system themes, mobile drawer, instant detail sheets, null-safe sorting |
 | **Solar & lunar transits** | Per-port Merpas, twilight and moon data, cached 12 h — no API keys |
 
@@ -49,7 +49,15 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 </details>
 
 <details>
-<summary>🗺️ Interactive SVG Map with Level-of-Detail</summary>
+<summary>🗺️ Interactive World Map — MapLibre GL (default) + legacy SVG</summary>
+
+**MapLibre GL** (`src/map/`) is the default renderer:
+
+- Raster OpenStreetMap base tiles — env-swappable via `VITE_OSM_TILE_URL` so production can point at a metered provider
+- Optional OpenSeaMap seamarks overlay, shown from zoom 6+
+- Port markers with clustering at world zoom, plus a country-level world view backed by the compact `GET /api/ports?format=countries` index
+
+**Legacy SVG fallback** (`VITE_USE_MAPLIBRE=false`): self-contained Natural Earth cartography with zoom-based level-of-detail — no tiles, no keys, fully offline-capable:
 
 | Zoom | Visible ports |
 |------|---------------|
@@ -58,11 +66,11 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 | 4×+  | + Tier 3 — minor ports (~1,499) |
 | 8×+  | + Tier 4 — very small ports & anchorages (all 5,410) |
 
-Dots are colored by maximum channel depth:
+The SVG renderer colors dots by maximum channel depth:
 
 `<5 m` · `5–10 m` · `10–15 m` · `15–20 m` · `20 m+` · `no data` (gray)
 
-Viewport culling and selected-port highlighting run on every pan/zoom frame.
+Viewport culling and selected-port highlighting run on every pan/zoom frame (SVG renderer).
 
 </details>
 
@@ -90,11 +98,24 @@ Served by `GET /api/astronomy`, which proxies the free [SunriseSunset.io](https:
 </details>
 
 <details>
+<summary>🌬️ Weather, Sea State & Tides (per port)</summary>
+
+The port detail sheet also shows live conditions for the port's coordinates — all proxied server-side (key-free) and CDN-cached:
+
+- **Weather** — current conditions (temperature, wind in knots, pressure) plus a 7-day outlook, via `GET /api/weather` (Open-Meteo Forecast API)
+- **Sea state** — wave height / direction / period, swell and wind waves, via `GET /api/marine` (Open-Meteo Marine API); hidden automatically for inland ports outside wave-model coverage
+- **Tides** — hourly sea-level curve for the port, via `GET /api/tide` (Open-Meteo Marine API), rendered as an SVG chart
+- **Local time** — IANA time zone, current local time and DST calendar, via `GET /api/timezone`
+
+</details>
+<details>
 <summary>🎨 Modern Design System</summary>
 
-- Light / dark / system theme with persistent storage
+- **Moss palette** — one hue throughout: warm off-white paper with a single mint accent (light), near-black with low-opacity mint (dark); every text pair is verified by `src/lib/contrast.test.ts` (WCAG AA in both themes)
+- Light / dark / system theme with persistent storage, applied pre-paint by an inline script in `index.html` — no light-to-dark flash on load; `color-scheme` is declared so mobile browsers never apply their own forced-dark filter
+- Port sizes use a single-hue four-step ramp (`PORT_SIZE_STYLES`) — colour never carries meaning without a text label
 - Responsive layout: sticky sidebar ≥ 1024 px, collapsible filter drawer with active-filter badge below
-- Radix UI primitives + Tailwind CSS v4 OKLCH design tokens
+- Radix UI primitives + Tailwind CSS v4 semantic design tokens
 - Accessible: keyboard-navigable controls, aria labels, WCAG AA contrast in both themes
 
 </details>
@@ -119,6 +140,12 @@ npm start
 
 # 4. Type-check (tsc --noEmit)
 npm run lint
+
+# 5. Unit tests (filter/sorting invariants + map bounds)
+npm test
+
+# 6. Contrast tests (WCAG AA pairs for the moss palette)
+node --import tsx --test src/lib/contrast.test.ts
 ```
 
 ---
@@ -155,7 +182,8 @@ npm run lint
 - **Single process, single port** → no CORS friction, simple deployment
 - **Full dataset cached in the V8 heap (~3.3 MB)** → sub-5 ms queries with zero database overhead
 - **Compact `format=points` payload + viewport culling** → smooth map panning at any zoom
-- **Static Natural Earth SVG paths** → no Mapbox/Leaflet tile services, no API keys, offline-friendly
+- **Dual map renderers** → MapLibre GL with OSM raster tiles by default (swap providers via `VITE_OSM_TILE_URL`), plus a self-contained Natural Earth SVG fallback (`VITE_USE_MAPLIBRE=false`) with zero tile services
+- **One API app, two entry points** → `buildApiApp()` in `src/lib/apiApp.ts` is shared by `server.ts` (local/self-host) and `api/index.ts` (Vercel serverless), so routes never drift
 
 See [docs/architecture.md](docs/architecture.md) for the full deep-dive.
 
@@ -165,11 +193,13 @@ See [docs/architecture.md](docs/architecture.md) for the full deep-dive.
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/ports` | Filtered, sorted, paginated list — or `?format=points` for the compact map payload |
+| `GET /api/ports` | Filtered, sorted, paginated list — `?format=points` (compact map payload) or `?format=countries` (country index for the GL world view) |
 | `GET /api/ports/:id` | Single port by WPI ID |
 | `GET /api/astronomy` | Sun & moon transit times for `?lat=&lng=` (cached 12 h) |
 | `GET /api/timezone` | Time zone, UTC offset & DST calendar for `?lat=&lng=` (cached 12 h) |
-| `GET /api/tide` | Hourly sea level incl. tides for `?lat=&lng=` |
+| `GET /api/tide` | Hourly sea level incl. tides for `?lat=&lng=` (Open-Meteo Marine proxy) |
+| `GET /api/weather` | Current conditions + 7-day outlook for `?lat=&lng=` (Open-Meteo proxy, wind in knots) |
+| `GET /api/marine` | Sea state: wave / swell height, direction & period (Open-Meteo Marine proxy) |
 | `GET /api/stats` | Aggregates: country counts, port/vessel size distributions, depth bins |
 
 Common query parameters:
@@ -193,18 +223,24 @@ Common query parameters:
 <summary>Expand directory layout</summary>
 
 ```text
+├── api/index.ts                 # Vercel serverless entry (reuses buildApiApp)
 ├── data/ports.json               # NGA World Port Index (5,410 records)
 ├── docs/architecture.md          # Full system design deep-dive
 ├── public/
-│   ├── land.json                 # Natural Earth coastline vectors
-│   └── logo.svg                  # Nautical branding
+│   ├── land.json                 # Natural Earth coastline vectors (SVG map)
+│   └── logo.svg                   # Nautical branding
+├── scripts/                      # Data pipeline (UN/LOCODE join)
 ├── src/
-│   ├── components/ports/         # PortMap, PortsTable, FilterSidebar, PortDetailSheet
+│   ├── components/ports/         # PortsTable, FilterSidebar, PortDetailSheet,
+│   │                              # PortMap (legacy SVG) + astronomy/weather/
+│   │                              # tide/timezone cards + shared types
 │   ├── components/ui/             # Accessible UI primitives
-│   ├── lib/ports.ts              # Data layer + ranking helpers
-│   ├── lib/astronomy.ts          # Sun/moon transit fetcher + 12 h cache
+│   ├── map/                       # MapLibre GL renderer (PortsMap, CountryList, config)
+│   ├── lib/                       # ports.ts data layer, apiApp.ts Express API,
+│   │                              # astronomy/tides/weather/timezone proxies + tests
 │   └── App.tsx
-├── server.ts                     # Express API + Vite middleware
+├── server.ts                     # Local/self-host: Express API + Vite middleware
+├── vercel.json                   # Vercel rewrites + serverless function config
 └── package.json
 ```
 
@@ -217,6 +253,8 @@ Common query parameters:
 - **Dataset:** NGA Publication 150 *World Port Index* (2019 edition), via [tayljordan/ports](https://github.com/tayljordan/ports)
 - **Cartography:** Natural Earth admin-0 vectors (public domain)
 - **Astronomy:** [SunriseSunset.io](https://sunrisesunset.io) — daily sun/moon transit times per port (free API, no key, cached 12 h server-side)
+- **Weather, sea state & tides:** [Open-Meteo](https://open-meteo.com) Forecast + Marine APIs — key-free, proxied server-side with CDN caching
+- **Base cartography:** © OpenStreetMap contributors (raster tiles) with an optional OpenSeaMap seamarks overlay; Natural Earth vectors power the offline SVG fallback
 
 > [!WARNING]
 > Soundings are single recorded observations. They do not reflect real-time silting, dredging, or weather.
@@ -247,7 +285,7 @@ See [TODO.md](TODO.md) for the full backlog.
 We welcome improvements! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 - Branch & Conventional Commit conventions
-- PR checklist (`npm run lint` + `npm run build` must pass)
+- PR checklist (`npm run lint` + `npm run build` + `npm test` must pass)
 - Performance & accessibility expectations
 
 ---

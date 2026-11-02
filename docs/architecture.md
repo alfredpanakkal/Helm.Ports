@@ -29,7 +29,7 @@ Helm.Ports is built as a unified, single-port full-stack web application. It com
        |   src/lib/ports.ts      |                            |     React 19 SPA        |
        |  (In-Memory Query Engine)|                            |  - TanStack Query v5    |
        +------------+------------+                            |  - PortsTable           |
-                    |                                         |  - PortMap (SVG LOD)    |
+                    |                                         |  - PortsMap (GL) / PortMap (SVG) |
          Loads & Caches Once                                  |  - FilterSidebar        |
                     v                                         |  - PortDetailSheet      |
        +-------------------------+                            +-------------------------+
@@ -53,9 +53,12 @@ Helm.Ports is built as a unified, single-port full-stack web application. It com
   - In-memory array filtering and multi-column sorting run in **1.2 ms to 3.5 ms**, faster than typical database network round-trips.
   - Zero external database setup, migrations, or connection pool maintenance.
 
-### 2.3 Zoom-Based Level of Detail (LOD) & Compact Payload
-- **Problem**: Transmitting 3.3 MB to the browser and mounting 5,410 SVG nodes at world zoom scale degrades frame rates and creates an unreadable cluster.
-- **Decision**:
+### 2.3 Dual Map Renderers: MapLibre GL (default) + Legacy SVG
+- **Problem**: A tiled GL map depends on external tile services, while a self-contained SVG map offers no basemap context. Different deployments want both.
+- **Decision**: Ship two renderers behind the `VITE_USE_MAPLIBRE` switch in `App.tsx` (default: GL):
+  - **MapLibre GL** (`src/map/`): raster OpenStreetMap base tiles (env-swappable via `VITE_OSM_TILE_URL` for production metering), an optional OpenSeaMap seamarks overlay from zoom 6, port markers with clustering, and a country-level world view backed by the compact `GET /api/ports?format=countries` index.
+  - **Legacy equirectangular SVG** (`PortMap.tsx`): Natural Earth coastlines from `public/land.json` — zero tile services, no API keys, fully offline-capable.
+- **LOD & compact payload (SVG renderer)**:
   - The server exposes `/api/ports?format=points`, returning an array of compact tuples:
     ```ts
     interface MapPoint {
@@ -90,6 +93,13 @@ Helm.Ports is built as a unified, single-port full-stack web application. It com
   - The route sets `Cache-Control: public, max-age=300, s-maxage=43200`, letting the CDN (Vercel) extend the same 12 h window at the edge.
   - Fail-closed contract: invalid coordinates → 400, upstream failure → 502, and **failed responses are never cached**, so a transient upstream error never blocks a port for 12 hours.
   - Client uses TanStack Query (`staleTime` 30 min, 1 retry) with a skeleton fallback — no layout shift.
+
+### 2.6 Key-Free Weather, Sea State & Tide Proxies (Open-Meteo)
+- **Decision**: Port detail sheets show live conditions — current weather plus a 7-day outlook (wind in knots), sea state (wave/swell height, direction, period) and an hourly tide curve. All calls go through the server proxies (`/api/weather`, `/api/marine`, `/api/tide`) to key-free Open-Meteo endpoints, with `Cache-Control: public, max-age=300, s-maxage=1800` so the CDN absorbs the traffic.
+- **Fail-soft contract**: Outside model coverage (normal for inland ports) the proxies return 502 with an "unavailable for this location" message and the client hides the section. Failures are never cached.
+
+### 2.7 Shared API App, Two Entry Points
+- **Decision**: Every route lives in `src/lib/apiApp.ts` (`buildApiApp()`), which builds an Express app with no listener and no static-file serving. `server.ts` mounts it locally (plus Vite middleware in dev or `dist` in production); `api/index.ts` exports it as the Vercel serverless function, with `vercel.json` rewriting `/api/*` and bundling the dataset into the function. One route table, zero drift between local and deployed.
 
 ---
 
@@ -184,6 +194,10 @@ When sorting by `channel_depth_max_m`, `mean_tidal_range_m`, or other physical d
 - **Responsive Strategy**:
   - Wide screens ($\ge 1024$px): Permanent left sidebar filter panel with sticky positioning.
   - Mobile/Tablet screens ($< 1024$px): Collapsible filter drawer triggered by floating toolbar button with active filter counter badge.
+- **Moss design tokens**: `src/index.css` defines a single-hue palette — warm off-white paper with a pale mint accent (light), near-black with low-opacity mint (dark). Every text pair is pinned by `src/lib/contrast.test.ts` (WCAG AA ≥ 4.5:1 in both themes; control fills ≥ 3:1).
+- **Port-size ramp**: `PORT_SIZE_STYLES` in `src/components/ports/types.ts` renders port sizes as one hue at four strengths; the size label is always printed, so colour never carries meaning alone.
+- **No-flash, no forced-dark theming**: an inline pre-paint script in `index.html` applies the persisted/system theme before first paint, and `color-scheme` is declared per theme so mobile browsers (Android auto-dark, Edge forced dark) do not apply their own fading filter — the cause of the earlier faded-looking app on mobile.
+- **Masked decoration on its own layer**: `.hero-grid` sits on an absolutely-positioned, `pointer-events-none` element behind the hero content. A CSS mask on a content-bearing element fades everything inside it.
 
 ---
 

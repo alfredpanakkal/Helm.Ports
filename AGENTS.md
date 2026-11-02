@@ -44,7 +44,7 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 │   ├── components/
 │   │   ├── ports/
 │   │   │   ├── FilterSidebar.tsx  # Search/filter controls (country, depths, tides, restrictions)
-│   │   ├── AstronomyCard.tsx   # Sun/moon transit panel (Merpas, twilight, moon phase)
+│   │   ├── AstronomyCard.tsx      # Sun/moon transit panel (Merpas, twilight, moon phase)
 │   │   │   ├── PortDetailSheet.tsx# Detailed slide-over view for individual port
 │   │   │   ├── PortMap.tsx        # Interactive SVG map, LOD rendering, projection
 │   │   │   ├── PortsTable.tsx     # Paginated and sortable table
@@ -53,7 +53,7 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 │   │   └── ui/                    # Curated UI primitives (button, sheet, table, etc.)
 │   ├── lib/
 │   │   ├── ports.ts               # Core data layer: getPorts(), getMetadata(), country mapping
-│   │   ├── astronomy.ts           # Sun/moon transit fetcher: SunriseSunset.io proxy + 12 h in-memory cache
+│   │   ├── astronomy.ts           # Sun/moon transit fetcher: SunriseSunset.io proxy + 12 h cache
 │   │   └── utils.ts               # cn() class merging utility
 │   ├── App.tsx                    # Main orchestrator component
 │   ├── index.css                  # Tailwind v4 import + @theme tokens

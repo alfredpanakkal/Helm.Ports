@@ -88,7 +88,7 @@ Helm.Ports is built as a unified, single-port full-stack web application. It com
 - **Rationale**:
   - The upstream API is key-free but rate-limited like any public service — the proxy adds a 12-hour in-memory cache keyed on 2-decimal coordinates (~1 km cells, sufficient for transit times), so one upstream call per cell per half-day serves all visitors.
   - The route sets `Cache-Control: public, max-age=300, s-maxage=43200`, letting the CDN (Vercel) extend the same 12 h window at the edge.
-  - Fail-closed contract: invalid coordinates \u2192 400, upstream failure \u2192 502, and **failed responses are never cached**, so a transient upstream error never blocks a port for 12 hours.
+  - Fail-closed contract: invalid coordinates → 400, upstream failure → 502, and **failed responses are never cached**, so a transient upstream error never blocks a port for 12 hours.
   - Client uses TanStack Query (`staleTime` 30 min, 1 retry) with a skeleton fallback — no layout shift.
 
 ---

@@ -11,6 +11,7 @@ import {
 } from "./ports.ts";
 import { fetchAstronomy } from "./astronomy.ts";
 import { fetchTimezone } from "./timezone.ts";
+import { matchPortWatch } from "./portwatch.ts";
 
 const SORTABLE = new Set([
   "wpi_port_name",
@@ -53,11 +54,13 @@ function matchesQuery(p: PortRecord, q: string): boolean {
  *   GET /api/marine     - sea state (proxied Open-Meteo Marine API)
  *   GET /api/timezone   - zone, UTC offset & DST calendar (proxied TimeZoneDB)
  *   GET /api/tide       - hourly sea level incl. tides (proxied Open-Meteo Marine)
+ *   GET /api/portwatch  - historical vessel activity (proxied World Bank PortWatch)
  *
  * Shared by server.ts (local dev / self-hosting, single port with the Vite
  * middleware or static dist) and api/index.ts (Vercel serverless function).
  * Contains no listener and no static-file serving so both entry points stay
- * free of deployment-specific concerns. Querying stays in-memory via
+ * free of deployment-specific concerns. Querying
+ stays in-memory via
  * getPorts() (data/ports.json is parsed once and cached at module scope).
  */
 export function buildApiApp(): ReturnType<typeof express> {
@@ -118,7 +121,8 @@ export function buildApiApp(): ReturnType<typeof express> {
         depthBins: bins,
       });
     } catch (err) {
-      console.error("Error generating stats:", err);
+      console.error("Error generating stat
+s:", err);
       res.status(500).json({ error: "Failed to generate stats" });
     }
   });
@@ -158,7 +162,8 @@ export function buildApiApp(): ReturnType<typeof express> {
 
       let filtered = all.filter((p) => {
         if (q && !matchesQuery(p, q)) return false;
-        if (countrySet && !countrySet.has(p.country)) return false;
+        if (countrySet && !countrySet.has(p.country)) retur
+n false;
         if (portSizeSet) {
           const key = p.port_size ?? "none";
           if (!portSizeSet.has(key)) return false;
@@ -204,7 +209,8 @@ export function buildApiApp(): ReturnType<typeof express> {
         } else {
           const av = (a[sortKey as keyof PortRecord] as number | string | null) ?? null;
           const bv = (b[sortKey as keyof PortRecord] as number | string | null) ?? null;
-          if (av === null && bv === null) cmp = 0;
+ 
+         if (av === null && bv === null) cmp = 0;
           else if (av === null) return 1;
           else if (bv === null) return -1;
           else if (typeof av === "number" && typeof bv === "number") cmp = av - bv;
@@ -266,7 +272,8 @@ export function buildApiApp(): ReturnType<typeof express> {
       const lat = Number(req.query.lat);
       const lng = Number(req.query.lng);
       if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
-        res.status(400).json({ error: "Invalid coordinates" });
+        res.status(400).j
+son({ error: "Invalid coordinates" });
         return;
       }
       const data = await fetchAstronomy(lat, lng);
@@ -304,6 +311,26 @@ export function buildApiApp(): ReturnType<typeof express> {
     }
   });
 
+  // API PortWatch - historical vessel activity enrichment (proxied World Bank PortWatch)
+  app.get("/api/portwatch", async (req: Request, res: Response) => {
+    try {
+      const locode = typeof req.query.locode === "string" && req.query.locode ? req.query.locode : null;
+      const name = typeof req.query.name === "string" ? req.query.name.trim() : "";
+      const country = typeof req.query.country === "string" ? req.query.country.trim() : "";
+      if (!name || !country) {
+        res.status(400).json({ error: "Missing port name or country" });
+        return;
+      }
+      const match = await matchPortWatch({ locode, portid: null, name, country });
+      // No match is a normal outcome, not an error - the client hides the section.
+      res.set("Cache-Control", "public, max-age=3600, s-maxage=86400");
+      res.json({ matched: match != null, portwatch: match });
+    } catch (err) {
+      console.error("Error serving PortWatch data:", err);
+      res.status(502).json({ error: "PortWatch data temporarily unavailable" });
+    }
+  });
+
   // API Tide - hourly sea level height including tides (proxied Open-Meteo Marine)
   app.get("/api/tide", async (req: Request, res: Response) => {
     try {
@@ -321,7 +348,8 @@ export function buildApiApp(): ReturnType<typeof express> {
         past_days: "1",
         forecast_days: "2",
       });
-      const upstream = await fetch(
+    
+  const upstream = await fetch(
         "https://marine-api.open-meteo.com/v1/marine?" + params.toString()
       );
       if (!upstream.ok) {
@@ -373,7 +401,8 @@ export function buildApiApp(): ReturnType<typeof express> {
   });
 
   // API Marine - sea state (proxied Open-Meteo Marine API)
-  app.get("/api/marine", async (req: Request, res: Response) => {
+  ap
+p.get("/api/marine", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
       const lng = Number(req.query.lng);

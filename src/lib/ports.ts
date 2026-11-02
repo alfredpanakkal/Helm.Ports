@@ -125,10 +125,22 @@ export function getPorts(): PortRecord[] {
   if (cachedPorts) return cachedPorts;
   const filePath = resolveDataFile();
   const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-  cachedPorts = (raw.ports as Record<string, unknown>[]).map(normalizePort);
+  const normalized = (raw.ports as Record<string, unknown>[]).map(normalizePort);
+  // Data hygiene: the source file contains a small number of rows whose
+  // wpi_port_id is 0 or non-numeric - real places (Aalborg DK, Jebel Ali AE)
+  // that are missing both the port name and the WPI number. They are not
+  // identifiable: they all alias on GET /api/ports/0, cannot be deep-linked
+  // or distinguished on the map, and carry no soundings. Serve only records
+  // with a positive integer WPI ID until the source file is regenerated
+  // (see docs/architecture.md, section 6). The exact count is asserted by
+  // src/lib/ports.test.ts.
+  cachedPorts = normalized.filter(
+    (p) => Number.isInteger(p.wpi_port_id) && p.wpi_port_id > 0
+  );
   cachedMetadata = {
     schema_version: raw.metadata?.schema_version ?? "1.0",
-    record_count: raw.metadata?.record_count ?? cachedPorts.length,
+    // Reflect the count actually served, not the raw file row count.
+    record_count: cachedPorts.length,
     last_updated: raw.metadata?.last_updated ?? "",
     source: raw.metadata?.source ?? "",
   };

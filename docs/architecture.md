@@ -184,3 +184,26 @@ When sorting by `channel_depth_max_m`, `mean_tidal_range_m`, or other physical d
 - **Responsive Strategy**:
   - Wide screens ($\ge 1024$px): Permanent left sidebar filter panel with sticky positioning.
   - Mobile/Tablet screens ($< 1024$px): Collapsible filter drawer triggered by floating toolbar button with active filter counter badge.
+
+---
+
+## 6. Data Hygiene & Provenance
+
+### Invalid WPI ID rows (load-time guard)
+
+`data/ports.json` contains a small number of rows whose `wpi_port_id` is `0` or non-numeric - real places (e.g. Aalborg, DK and Jebel Ali, AE) that are missing both the port name and the WPI number in the source. They are not identifiable: they all alias on `GET /api/ports/0`, cannot be deep-linked, and carry no soundings. `getPorts()` therefore serves only records with a positive integer `wpi_port_id`, and `meta.record_count` (via `/api/stats`) reflects the served count rather than the raw file row count. When the source file is regenerated without these rows, the guard becomes a no-op; `src/lib/ports.test.ts` asserts the exclusion either way.
+
+### Sounding units (feet-quantized)
+
+The NGA World Port Index records depths in whole feet; the `_m` fields are those values converted to metres and rounded to 0.1 m (e.g. 114 ft = 34.7 m). Two consequences:
+
+- Metre display carries false precision (the source resolution is 1 ft / 0.3 m); a feet display renders the source values exactly. Keep this in mind for any unit toggle.
+- `src/lib/ports.test.ts` asserts the quantization invariant for every served sounding: `v / 0.3048` must be within 0.35 ft of an integer. A violation means the conversion pipeline changed and must be reviewed before shipping.
+
+### UN/LOCODE
+
+`scripts/join-unlocode.ts` (`npm run data:unlocode`) joins UNECE UN/LOCODEs onto `data/ports.json`. The join has not yet been run on the committed file, so `unlocode` is `null` for every record; the API and UI treat null as "not recorded". The join is idempotent and only touches the `unlocode` field.
+
+### Provenance
+
+`GET /api/stats` returns `meta` from the data file (`schema_version`, `record_count`, `last_updated`, `source`). `last_updated` is the dataset refresh date; `source` names the edition ("NGA Publication 150 - World Port Index, 2019 edition"). UI surfaces should print these verbatim from the API rather than hardcoding counts.

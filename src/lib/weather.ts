@@ -6,6 +6,7 @@
  */
 
 export interface CurrentWeather {
+  time: string | null; // ISO observation time, port-local
   temperature: number | null; // °C
   weatherCode: number | null; // WMO code
   windSpeed: number | null; // knots
@@ -62,6 +63,7 @@ export async function fetchPortWeather(
 
   return {
     current: {
+      time: current.time ?? null,
       temperature: current.temperature_2m ?? null,
       weatherCode: current.weather_code ?? null,
       windSpeed: current.wind_speed_10m ?? null,

@@ -42,6 +42,20 @@ function temp(v: number | null): string {
   return v == null ? "—" : Math.round(v) + "°C";
 }
 
+function observedAt(iso: string | null): string {
+  // Open-Meteo returns "YYYY-MM-DDTHH:MM" in the port's local time zone
+  return iso != null && iso.length >= 16 ? iso.slice(11, 16) : "";
+}
+
+function fetchedAgo(timestampMs: number): string {
+  if (!timestampMs) return "just now";
+  const mins = Math.max(0, Math.round((Date.now() - timestampMs) / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return mins + " min ago";
+  const hours = Math.floor(mins / 60);
+  return hours + " h " + (mins % 60) + " min ago";
+}
+
 /**
  * Current conditions and 7-day outlook for a port's coordinates, in the
  * port's local time zone. Data comes directly from the keyless
@@ -50,7 +64,7 @@ function temp(v: number | null): string {
 export function WeatherCard({ latitude, longitude }: Props) {
   const hasCoords = Number.isFinite(latitude) && Number.isFinite(longitude);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["weather", latitude.toFixed(2), longitude.toFixed(2)],
     queryFn: () => fetchPortWeather(latitude, longitude),
     staleTime: 30 * 60 * 1000,
@@ -92,6 +106,7 @@ export function WeatherCard({ latitude, longitude }: Props) {
   const { current, daily } = data;
   const now = describeWeather(current.weatherCode);
   const today = daily[0];
+  const obsTime = observedAt(current.time);
 
   return (
     <div>
@@ -167,6 +182,10 @@ export function WeatherCard({ latitude, longitude }: Props) {
       </div>
 
       <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+        {(obsTime ? "Observed " + obsTime + " · " : "") +
+          "fetched " +
+          fetchedAgo(dataUpdatedAt) +
+          ". "}
         Forecast in the port's local time zone. Powered by{" "}
         <a
           href="https://open-meteo.com"

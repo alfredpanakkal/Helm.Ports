@@ -1,9 +1,9 @@
 /**
  * PortWatch (World Bank) ports database - read-only enrichment for port
- * detail sheets. Source: the public ArcGIS FeatureServer GeoJSON endpoint.
+ * detail sheets. Source: the public ArcGIS FeatureServer query endpoint.
  *
  * The dataset is small (a few thousand features), so it is fetched once
- * (paginated), reduced to the fields we display, and kept in an in-memory
+ * (paginated), limited to the fields we display, and kept in an in-memory
  * index with a 24 h TTL. Fetch failures are never cached, so a later
  * request can retry. Matching priority: UN/LOCODE, then PortWatch portid,
  * then normalized port name + country.
@@ -11,6 +11,15 @@
 
 const FEATURE_SERVER =
   "https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/PortWatch_ports_database/FeatureServer/0/query";
+
+// Only the fields the port sheet displays. Keeps each page tiny (no
+// geometry, no unused columns) so the serverless function stays well
+// inside Vercel's execution budget even on a cold start.
+const OUT_FIELDS =
+  "portid,portname,country,lat,lon,LOCODE," +
+  "vessel_count_total,vessel_count_container,vessel_count_dry_bulk," +
+  "vessel_count_general_cargo,vessel_count_RoRo,vessel_count_tanker," +
+  "industry_top1";
 
 export interface PortWatchInfo {
   portid: string | null;
@@ -103,20 +112,24 @@ function toInfo(props: Record<string, unknown>): PortWatchInfo {
 /**
  * Fetches every feature page by resultOffset until the service returns a
  * short page - a single request never assumes it holds the whole dataset.
+ * Requests only the display fields without geometry, as plain JSON.
  */
 async function fetchAllFeatures(): Promise<Record<string, unknown>[]> {
   const features: Record<string, unknown>[] = [];
   for (let offset = 0; offset < 100000; offset += PAGE_SIZE) {
     const url =
       FEATURE_SERVER +
-      "?where=1%3D1&outFields=*&f=geojson" +
+      "?where=1%3D1" +
+      "&outFields=" + OUT_FIELDS +
+      "&returnGeometry=false" +
+      "&f=json" +
       "&resultOffset=" + offset +
       "&resultRecordCount=" + PAGE_SIZE;
     const res = await fetch(url);
     if (!res.ok) throw new Error("PortWatch request failed (" + res.status + ")");
-    const json = (await res.json()) as { features?: { properties?: Record<string, unknown> }[] };
+    const json = (await res.json()) as { features?: { attributes?: Record<string, unknown> }[] };
     const batch = json.features ?? [];
-    for (const f of batch) if (f.properties) features.push(f.properties);
+    for (const f of batch) if (f.attributes) features.push(f.attributes);
     if (batch.length < PAGE_SIZE) break;
   }
   return features;

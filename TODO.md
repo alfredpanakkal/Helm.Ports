@@ -40,5 +40,6 @@ This document tracks planned features, enhancements, and technical debt items fo
 - [x] Migrate Next.js 15 monolith to standalone React 19 + Express + Vite architecture.
 - [x] Normalize 220 raw WPI country abbreviations into 209 canonical country names.
 - [x] Configure Tailwind CSS v4 OKLCH token system.
+- [x] Add per-port Solar & Lunar transit panel (Merpas, nautical twilight, moon phase) via `GET /api/astronomy` with 12 h caching.
 - [ ] Add automated unit tests with `node:test` covering `src/lib/ports.ts` filtering and sorting invariants.
 - [ ] Add Playwright browser test suite for pan/zoom interactions and filter drawer on mobile viewports.

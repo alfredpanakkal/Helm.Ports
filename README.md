@@ -31,6 +31,7 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 | **Navigational screening** | Channel depth, tidal range, vessel size & entrance restrictions at a glance |
 | **Self-contained cartography** | Natural Earth coastlines served locally — fully offline-capable |
 | **Modern UX** | Dark/light/system themes, mobile drawer, instant detail sheets, null-safe sorting |
+| **Solar & lunar transits** | Per-port Merpas, twilight and moon data, cached 12 h — no API keys |
 
 ---
 
@@ -71,6 +72,20 @@ Viewport culling and selected-port highlighting run on every pan/zoom frame.
 - Sortable, paginated table (10–100 rows per page) with **null-safe ordering** — missing soundings always sort last
 - Slide-over detail sheet with all soundings: channel, anchorage, cargo pier, oil terminal
 - Restriction badges and tidal-range display
+
+</details>
+
+<details>
+<summary>🌞 Solar & Lunar Transits (per port)</summary>
+
+Every port detail sheet shows today's astronomy data for the port's coordinates, in the port's local time zone:
+
+- **Merpas (solar noon)** — local meridian transit, the daily sight-taking reference
+- Sunrise / sunset and day length
+- **Nautical twilight** window (dawn – dusk), the sight-reduction and star-observation period
+- Moon phase with % illumination, plus moonrise / moonset
+
+Served by `GET /api/astronomy`, which proxies the free [SunriseSunset.io](https://sunrisesunset.io) API (no key) and caches responses for 12 hours — one upstream call per coordinate cell per half-day, shared across all visitors.
 
 </details>
 
@@ -185,6 +200,7 @@ Common query parameters:
 │   ├── components/ports/         # PortMap, PortsTable, FilterSidebar, PortDetailSheet
 │   ├── components/ui/             # Accessible UI primitives
 │   ├── lib/ports.ts              # Data layer + ranking helpers
+│   ├── lib/astronomy.ts         # Sun/moon transit fetcher + 12 h cache
 │   └── App.tsx
 ├── server.ts                     # Express API + Vite middleware
 └── package.json
@@ -198,6 +214,7 @@ Common query parameters:
 
 - **Dataset:** NGA Publication 150 *World Port Index* (2019 edition), via [tayljordan/ports](https://github.com/tayljordan/ports)
 - **Cartography:** Natural Earth admin-0 vectors (public domain)
+- **Astronomy:** [SunriseSunset.io](https://sunrisesunset.io) — daily sun/moon transit times per port (free API, no key, cached 12 h server-side)
 
 > [!WARNING]
 > Soundings are single recorded observations. They do not reflect real-time silting, dredging, or weather.

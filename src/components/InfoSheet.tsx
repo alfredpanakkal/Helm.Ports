@@ -6,7 +6,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useTheme } from "@/components/theme-provider";
-import { Sun, Moon, Monitor, Ship } from "lucide-react";
+import { Sun, Moon, Monitor, Ship, Globe, Linkedin } from "lucide-react";
 
 const THEME_OPTIONS = [
   { value: "light", label: "Light", icon: Sun },
@@ -109,7 +109,29 @@ export function InfoSheet({
                     @alfredpanakkal
                   </a>
                 </p>
+                <p className="text-xs text-muted-foreground/70">Third Officer on ocean-going tankers · Full-Stack Developer</p>
+                <p className="text-xs text-muted-foreground/70">India · K-Line</p>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href="https://alfred-panakkal.vercel.app"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-accent-foreground/30 hover:text-foreground"
+              >
+                <Globe className="h-4 w-4" aria-hidden />
+                Portfolio
+              </a>
+              <a
+                href="https://www.linkedin.com/in/alfredpanakkal/"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-accent-foreground/30 hover:text-foreground"
+              >
+                <Linkedin className="h-4 w-4" aria-hidden />
+                LinkedIn
+              </a>
             </div>
           </Section>
 

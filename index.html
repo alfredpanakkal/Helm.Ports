@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAFAF7" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0E1210" />
     <title>Helm.Ports — World Port Index</title>
     <meta name="description" content="Helm.Ports — Search, filter, and map 5,410 worldwide maritime ports from the NGA World Port Index with channel depths, tidal ranges, and entrance restrictions." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -12,6 +15,19 @@
     <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
+    <script>
+      // Pre-hydration theme: apply the saved/system theme before first paint
+      // so the page never flashes light-then-dark on mobile. Mirrors the
+      // ThemeProvider logic in src/components/theme-provider.tsx.
+      try {
+        var t = localStorage.getItem("helm-ports-theme") || "system";
+        var dark =
+          t === "dark" ||
+          (t !== "light" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+      } catch (e) {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

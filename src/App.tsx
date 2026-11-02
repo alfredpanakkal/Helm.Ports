@@ -97,8 +97,8 @@ function StatCard({
   hint: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="text-2xl font-medium leading-tight tabular-nums text-foreground">
+    <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
+      <p className="text-xl sm:text-2xl font-medium leading-tight tabular-nums text-foreground">
         {value}
       </p>
       <p className="label-mono mt-1 truncate text-muted-foreground">
@@ -230,7 +230,7 @@ function PortsExplorer() {
       <main className="flex-1">
         {/* Hero + search + stats */}
         <section className="hero-grid border-b border-border bg-background">
-          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-16">
             <div className="max-w-3xl">
               <h1 className="text-3xl font-medium tracking-tight text-foreground sm:text-4xl lg:text-5xl">
                 Every port. Every depth. One search.
@@ -269,7 +269,7 @@ function PortsExplorer() {
               )}
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 lg:grid-cols-4">
               {stats ? (
                 <>
                   <StatCard
@@ -293,17 +293,17 @@ function PortsExplorer() {
                     hint="mean tidal ranges"
                   />
                 </>
-              ) : (
+              ) : statsQuery.isPending ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="h-[80px] rounded-xl" />
                 ))
-              )}
+              ) : null}
             </div>
           </div>
         </section>
 
         {/* Explorer Layout */}
-        <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
+        <section className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
           <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
             {/* Desktop Filters Sidebar */}
             <aside className="hidden lg:block">
@@ -315,7 +315,7 @@ function PortsExplorer() {
             {/* Main Content Area */}
             <div className="min-w-0">
               {/* Toolbar */}
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="rounded-full bg-gradient-to-r from-[#DDEFE0] to-[#E9F6CE] p-1 dark:from-[#1C2A22] dark:to-[#26341F]">
                 <Tabs
                   value={tab}
@@ -335,7 +335,7 @@ function PortsExplorer() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <p className="hidden text-sm text-muted-foreground sm:block">
+                  <p className="text-xs text-muted-foreground sm:text-sm">
                     <span className="font-semibold tabular-nums text-foreground">
                       {resultCount.toLocaleString()}
                     </span>{" "}
@@ -415,7 +415,7 @@ function PortsExplorer() {
 
       {/* Footer */}
       <footer className="mt-auto border-t border-border bg-card">
-        <div className="mx-auto max-w-7xl px-4 py-6">
+        <div className="mx-auto max-w-7xl px-4 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <p className="text-xs text-muted-foreground/70">
               Not for navigation — always consult current nautical charts.

@@ -53,14 +53,11 @@ function matchesQuery(p: PortRecord, q: string): boolean {
  *   GET /api/marine     - sea state (proxied Open-Meteo Marine API)
  *   GET /api/timezone   - zone, UTC offset & DST calendar (proxied TimeZoneDB)
  *   GET /api/tide       - hourly sea level incl. tides (proxied Open-Meteo Marine)
- *   GET /api/portwatch  - historical vessel activity (proxied World Bank PortWatch)
  *
  * Shared by server.ts (local dev / self-hosting, single port with the Vite
- * middleware or static dist) and api/index.ts (Vercel serverless fun
-ction).
+ * middleware or static dist) and api/index.ts (Vercel serverless function).
  * Contains no listener and no static-file serving so both entry points stay
- * free of deployment-specific concerns. Querying
- stays in-memory via
+ * free of deployment-specific concerns. Querying stays in-memory via
  * getPorts() (data/ports.json is parsed once and cached at module scope).
  */
 export function buildApiApp(): ReturnType<typeof express> {
@@ -117,13 +114,11 @@ export function buildApiApp(): ReturnType<typeof express> {
         sizeCounts: [...sizeCounts.entries()].sort((a, b) => b[1] - a[1]),
         vesselCounts: [...vesselCounts.entries()].sort((a, b) => b[1] - a[1]),
         topCountries: countryCounts.slice(0, 10),
-
         allCountries: countryCounts,
         depthBins: bins,
       });
     } catch (err) {
-      console.error("Error generating stat
-s:", err);
+      console.error("Error generating stats:", err);
       res.status(500).json({ error: "Failed to generate stats" });
     }
   });
@@ -161,11 +156,9 @@ s:", err);
       const vesselSizeSet = vesselSizes.length ? new Set(vesselSizes) : null;
       const restrSet = new Set(restrictions);
 
-      let filter
-ed = all.filter((p) => {
+      let filtered = all.filter((p) => {
         if (q && !matchesQuery(p, q)) return false;
-        if (countrySet && !countrySet.has(p.country)) retur
-n false;
+        if (countrySet && !countrySet.has(p.country)) return false;
         if (portSizeSet) {
           const key = p.port_size ?? "none";
           if (!portSizeSet.has(key)) return false;
@@ -209,11 +202,9 @@ n false;
           if (rb === 0) return -1;
           cmp = ra - rb;
         } else {
-          const av = (a[sortKey as keyof P
-ortRecord] as number | string | null) ?? null;
+          const av = (a[sortKey as keyof PortRecord] as number | string | null) ?? null;
           const bv = (b[sortKey as keyof PortRecord] as number | string | null) ?? null;
- 
-         if (av === null && bv === null) cmp = 0;
+          if (av === null && bv === null) cmp = 0;
           else if (av === null) return 1;
           else if (bv === null) return -1;
           else if (typeof av === "number" && typeof bv === "number") cmp = av - bv;
@@ -273,11 +264,9 @@ ortRecord] as number | string | null) ?? null;
   app.get("/api/astronomy", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
-      const lng = 
-Number(req.query.lng);
+      const lng = Number(req.query.lng);
       if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
-        res.status(400).j
-son({ error: "Invalid coordinates" });
+        res.status(400).json({ error: "Invalid coordinates" });
         return;
       }
       const data = await fetchAstronomy(lat, lng);
@@ -315,30 +304,6 @@ son({ error: "Invalid coordinates" });
     }
   });
 
-  // API PortWatch - historical vessel activity enrichment (proxied World Bank PortWatch)
-  app.get("/api/portwatch", async (req: Request, res: Response) => {
-    try {
-      const locode = typeof req.query.locode === "string" && req.query.locode ? req.query.locode : null;
-      const name = typeof req.query.name === "string" ? req.query.name.trim() : "";
-      const country = typeof req.query.country === "string" ? req.query.country.trim() : "";
-      if (!name || !country) {
-        res.status(400).json({ erro
-r: "Missing port name or country" });
-        return;
-      }
-      // Lazy import: keeps PortWatch out of the cold-start module graph so
-      // any failure in it (bundling or upstream) cannot take down the core API.
-      const { matchPortWatch } = await import("./portwatch.ts");
-      const match = await matchPortWatch({ locode, portid: null, name, country });
-      // No match is a normal outcome, not an error - the client hides the section.
-      res.set("Cache-Control", "public, max-age=3600, s-maxage=86400");
-      res.json({ matched: match != null, portwatch: match });
-    } catch (err) {
-      console.error("Error serving PortWatch data:", err);
-      res.status(502).json({ error: "PortWatch data temporarily unavailable" });
-    }
-  });
-
   // API Tide - hourly sea level height including tides (proxied Open-Meteo Marine)
   app.get("/api/tide", async (req: Request, res: Response) => {
     try {
@@ -356,8 +321,7 @@ r: "Missing port name or country" });
         past_days: "1",
         forecast_days: "2",
       });
-    
-  const upstream = await fetch(
+      const upstream = await fetch(
         "https://marine-api.open-meteo.com/v1/marine?" + params.toString()
       );
       if (!upstream.ok) {
@@ -377,8 +341,7 @@ r: "Missing port name or country" });
   app.get("/api/weather", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
-      const lng = Num
-ber(req.query.lng);
+      const lng = Number(req.query.lng);
       if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
         res.status(400).json({ error: "Invalid coordinates" });
         return;
@@ -410,8 +373,7 @@ ber(req.query.lng);
   });
 
   // API Marine - sea state (proxied Open-Meteo Marine API)
-  ap
-p.get("/api/marine", async (req: Request, res: Response) => {
+  app.get("/api/marine", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
       const lng = Number(req.query.lng);
@@ -425,8 +387,7 @@ p.get("/api/marine", async (req: Request, res: Response) => {
         current:
           "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period,wind_wave_height,wind_wave_direction,wind_wave_period",
         daily:
-          "wave_height_max,wave_direction_dominant,wave_period_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max,wind_wave_height_max,wind_wave_d
-irection_dominant,wind_wave_period_max",
+          "wave_height_max,wave_direction_dominant,wave_period_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max,wind_wave_height_max,wind_wave_direction_dominant,wind_wave_period_max",
         timezone: "auto",
         forecast_days: "7",
       });

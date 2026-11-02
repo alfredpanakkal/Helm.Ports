@@ -16,7 +16,6 @@ import { AstronomyCard } from "./AstronomyCard";
 import { TimezoneCard } from "./TimezoneCard";
 import { WeatherCard } from "./WeatherCard";
 import { TideCard } from "./TideCard";
-import { PortWatchCard } from "./PortWatchCard";
 import { formatRange, type Port } from "./types";
 
 interface Props {
@@ -55,8 +54,7 @@ function PortDetailBody({ port }: { port: Port }) {
         )}
         {restrictions.length > 0 ? (
           restrictions.map((r) => (
-            <Badge key={r
-} variant="destructive" className="font-normal">
+            <Badge key={r} variant="destructive" className="font-normal">
               {r} restricted
             </Badge>
           ))
@@ -110,16 +108,13 @@ function PortDetailBody({ port }: { port: Port }) {
         </h4>
         <Row
           label="Mean tidal range"
-    
-      value={
+          value={
             port.mean_tidal_range_m != null
               ? `${port.mean_tidal_range_m.toFixed(1)} m`
               : "No data"
           }
         />
       </div>
-
-      <PortWatchCard port={port} />
 
       <TideCard latitude={port.latitude} longitude={port.longitude} />
 
@@ -168,8 +163,7 @@ export function PortDetailSheet({ port, onClose }: Props) {
 
   return (
     <Sheet open={port != null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full overfl
-ow-y-auto sm:max-w-md">
+      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-xl">
             <Anchor className="h-5 w-5 text-teal-600" aria-hidden />

@@ -57,8 +57,7 @@ function matchesQuery(p: PortRecord, q: string): boolean {
  * Shared by server.ts (local dev / self-hosting, single port with the Vite
  * middleware or static dist) and api/index.ts (Vercel serverless function).
  * Contains no listener and no static-file serving so both entry points stay
- * free of deployment-specific concerns. Querying
- stays in-memory via
+ * free of deployment-specific concerns. Querying stays in-memory via
  * getPorts() (data/ports.json is parsed once and cached at module scope).
  */
 export function buildApiApp(): ReturnType<typeof express> {
@@ -119,8 +118,7 @@ export function buildApiApp(): ReturnType<typeof express> {
         depthBins: bins,
       });
     } catch (err) {
-      console.error("Error generating stat
-s:", err);
+      console.error("Error generating stats:", err);
       res.status(500).json({ error: "Failed to generate stats" });
     }
   });
@@ -160,8 +158,7 @@ s:", err);
 
       let filtered = all.filter((p) => {
         if (q && !matchesQuery(p, q)) return false;
-        if (countrySet && !countrySet.has(p.country)) retur
-n false;
+        if (countrySet && !countrySet.has(p.country)) return false;
         if (portSizeSet) {
           const key = p.port_size ?? "none";
           if (!portSizeSet.has(key)) return false;
@@ -207,8 +204,7 @@ n false;
         } else {
           const av = (a[sortKey as keyof PortRecord] as number | string | null) ?? null;
           const bv = (b[sortKey as keyof PortRecord] as number | string | null) ?? null;
- 
-         if (av === null && bv === null) cmp = 0;
+          if (av === null && bv === null) cmp = 0;
           else if (av === null) return 1;
           else if (bv === null) return -1;
           else if (typeof av === "number" && typeof bv === "number") cmp = av - bv;
@@ -270,8 +266,7 @@ n false;
       const lat = Number(req.query.lat);
       const lng = Number(req.query.lng);
       if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
-        res.status(400).j
-son({ error: "Invalid coordinates" });
+        res.status(400).json({ error: "Invalid coordinates" });
         return;
       }
       const data = await fetchAstronomy(lat, lng);
@@ -326,8 +321,7 @@ son({ error: "Invalid coordinates" });
         past_days: "1",
         forecast_days: "2",
       });
-    
-  const upstream = await fetch(
+      const upstream = await fetch(
         "https://marine-api.open-meteo.com/v1/marine?" + params.toString()
       );
       if (!upstream.ok) {
@@ -379,8 +373,7 @@ son({ error: "Invalid coordinates" });
   });
 
   // API Marine - sea state (proxied Open-Meteo Marine API)
-  ap
-p.get("/api/marine", async (req: Request, res: Response) => {
+  app.get("/api/marine", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
       const lng = Number(req.query.lng);

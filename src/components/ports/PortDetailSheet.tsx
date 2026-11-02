@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Anchor, Ruler, Waves } from "lucide-react";
 import { AstronomyCard } from "./AstronomyCard";
+import { TimezoneCard } from "./TimezoneCard";
 import { WeatherCard } from "./WeatherCard";
 import { formatRange, type Port } from "./types";
 
@@ -117,6 +118,8 @@ function PortDetailBody({ port }: { port: Port }) {
       <WeatherCard latitude={port.latitude} longitude={port.longitude} />
 
       <AstronomyCard latitude={port.latitude} longitude={port.longitude} />
+
+      <TimezoneCard latitude={port.latitude} longitude={port.longitude} />
 
       <Separator />
 

@@ -51,6 +51,9 @@
 :root {
   /* Moss palette: warm off-white paper + one pale mint accent.
      Every text pair verified in src/lib/contrast.test.ts. */
+  /* Declared so mobile browsers (Android Chrome auto-dark, Edge forced dark)
+     treat the page as dark-aware and do NOT apply their own fading filter. */
+  color-scheme: light;
   --radius: 0.75rem;
   --background: #FAFAF7;
   --foreground: #1D211E;
@@ -91,6 +94,7 @@
 .dark {
   /* Moss dark: near-black with mint at low opacity.
      Verified pairs in src/lib/contrast.test.ts. */
+  color-scheme: dark;
   --background: #0E1210;
   --foreground: #E9EDE9;
   --card: #151A17;

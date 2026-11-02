@@ -432,7 +432,7 @@ export function PortsMap({ onSelect }: Props) {
           controls keep their theme colors. */}
       <div
         ref={containerRef}
-        className="h-[70vh] min-h-[420px] w-full dark:[&_.maplibregl-canvas]:brightness-[0.85] dark:[&_.maplibregl-canvas]:saturate-[0.75]"
+        className="h-[70dvh] min-h-[320px] sm:min-h-[420px] w-full dark:[&_.maplibregl-canvas]:brightness-[0.85] dark:[&_.maplibregl-canvas]:saturate-[0.75]"
         role="region"
         aria-label="Interactive world map of maritime ports"
       />
@@ -470,13 +470,13 @@ export function PortsMap({ onSelect }: Props) {
       </div>
 
       {country != null && pointsQuery.isPending && (
-        <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1.5 text-xs text-muted-foreground backdrop-blur">
+        <div className="absolute left-1/2 top-14 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-md border border-border bg-background/90 px-2.5 py-1.5 text-xs text-muted-foreground backdrop-blur">
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
           Loading ports…
         </div>
       )}
       {country != null && pointsQuery.isError && (
-        <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-md border border-border bg-background/90 px-2.5 py-1.5 text-xs text-muted-foreground backdrop-blur">
+        <div className="absolute left-1/2 top-14 z-10 -translate-x-1/2 rounded-md border border-border bg-background/90 px-2.5 py-1.5 text-xs text-muted-foreground backdrop-blur">
           Failed to load ports — try again
         </div>
       )}

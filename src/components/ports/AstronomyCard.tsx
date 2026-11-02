@@ -38,8 +38,8 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 /**
  * Solar & lunar transit panel for a port's coordinates (today, in the
- * port's local time zone). Data comes from GET /api/astronomy, which
- * caches upstream SunriseSunset.io responses for 12 hours.
+ * port's local time zone). Data comes from GET /api/astronomy, which proxies
+ * Open-Meteo and caches responses for 12 hours.
  */
 export function AstronomyCard({ latitude, longitude }: Props) {
   const { data, isLoading, isError } = useQuery({
@@ -96,12 +96,12 @@ export function AstronomyCard({ latitude, longitude }: Props) {
       <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
         Times in {data.timezone}. Powered by{" "}
         <a
-          href="https://sunrisesunset.io"
+          href="https://open-meteo.com"
           target="_blank"
           rel="noreferrer"
           className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
         >
-          SunriseSunset.io
+          Open-Meteo
         </a>
         . Indicative almanac data — not for navigation.
       </p>

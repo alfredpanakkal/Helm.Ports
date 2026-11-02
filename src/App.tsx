@@ -28,10 +28,6 @@ import {
   Sun,
   Moon,
   SlidersHorizontal,
-  Ship,
-  Globe2,
-  Ruler,
-  Waves,
   Map as MapIcon,
   List,
   X,
@@ -85,36 +81,29 @@ function ThemeToggle() {
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
       aria-label="Toggle dark mode"
     >
-      <Sun className="h-4 w-4 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0 text-amber-500" />
-      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100 text-teal-400" />
+      <Sun className="h-4 w-4 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0 text-muted-foreground" />
+      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100 text-accent-foreground" />
     </Button>
   );
 }
 
 function StatCard({
-  icon: Icon,
   label,
   value,
   hint,
 }: {
-  icon: React.ElementType;
   label: string;
   value: string;
   hint: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 transition-all hover:border-teal-500/40">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-teal-600/10 text-teal-700 dark:text-teal-400">
-        <Icon className="h-5 w-5" aria-hidden />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xl font-bold leading-tight tabular-nums text-foreground">
-          {value}
-        </p>
-        <p className="truncate text-xs text-muted-foreground">
-          {label} <span className="text-muted-foreground/60">· {hint}</span>
-        </p>
-      </div>
+    <div className="rounded-xl border border-border bg-card p-4">
+      <p className="text-2xl font-medium leading-tight tabular-nums text-foreground">
+        {value}
+      </p>
+      <p className="label-mono mt-1 truncate text-muted-foreground">
+        {label} <span className="text-muted-foreground/60">· {hint}</span>
+      </p>
     </div>
   );
 }
@@ -201,7 +190,7 @@ function PortsExplorer() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-background selection:bg-teal-500/20">
+    <div className="flex min-h-screen flex-col bg-background selection:bg-accent">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -218,10 +207,7 @@ function PortsExplorer() {
               </svg>
             </a>
             <div>
-              <p
-                className="hidden text-sm font-semibold tracking-wide text-foreground sm:block"
-                style={{ fontFamily: "Cinzel, serif" }}
-              >
+              <p className="label-mono hidden text-foreground sm:block">
                 HELM.PORTS
               </p>
             </div>
@@ -243,11 +229,11 @@ function PortsExplorer() {
 
       <main className="flex-1">
         {/* Hero + search + stats */}
-        <section className="border-b border-border bg-gradient-to-b from-teal-600/10 via-background to-background">
-          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+        <section className="hero-grid border-b border-border bg-background">
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
             <div className="max-w-3xl">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-                Explore the world&rsquo;s maritime ports
+              <h1 className="text-3xl font-medium tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Every port. Every depth. One search.
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Search {stats ? stats.totalPorts.toLocaleString() : "5,410"} ports
@@ -287,25 +273,21 @@ function PortsExplorer() {
               {stats ? (
                 <>
                   <StatCard
-                    icon={Ship}
                     label="Ports & anchorages"
                     value={stats.totalPorts.toLocaleString()}
                     hint={`updated ${stats.meta.last_updated}`}
                   />
                   <StatCard
-                    icon={Globe2}
                     label="Countries & territories"
                     value={stats.totalCountries.toLocaleString()}
                     hint="worldwide coverage"
                   />
                   <StatCard
-                    icon={Ruler}
                     label="Depth soundings"
                     value={stats.withDepth.toLocaleString()}
                     hint="channel depths recorded"
                   />
                   <StatCard
-                    icon={Waves}
                     label="Tidal data"
                     value={stats.withTidal.toLocaleString()}
                     hint="mean tidal ranges"
@@ -313,7 +295,7 @@ function PortsExplorer() {
                 </>
               ) : (
                 Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-[76px] rounded-lg" />
+                  <Skeleton key={i} className="h-[80px] rounded-xl" />
                 ))
               )}
             </div>
@@ -334,11 +316,12 @@ function PortsExplorer() {
             <div className="min-w-0">
               {/* Toolbar */}
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="rounded-full bg-gradient-to-r from-[#DDEFE0] to-[#E9F6CE] p-1 dark:from-[#1C2A22] dark:to-[#26341F]">
                 <Tabs
                   value={tab}
                   onValueChange={(v) => setTab(v as "list" | "map")}
                 >
-                  <TabsList className="h-10 bg-muted/70">
+                  <TabsList className="h-10 border border-transparent bg-muted/70">
                     <TabsTrigger value="list" className="gap-1.5 px-4 cursor-pointer">
                       <List className="h-4 w-4" aria-hidden />
                       List
@@ -349,6 +332,7 @@ function PortsExplorer() {
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
+                </div>
 
                 <div className="flex items-center gap-2">
                   <p className="hidden text-sm text-muted-foreground sm:block">
@@ -371,7 +355,7 @@ function PortsExplorer() {
                         <SlidersHorizontal className="h-4 w-4" aria-hidden />
                         Filters
                         {filterCount > 0 && (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 px-1 text-[11px] font-semibold text-white">
+                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-accent-foreground">
                             {filterCount}
                           </span>
                         )}
@@ -387,7 +371,14 @@ function PortsExplorer() {
                 </div>
               </div>
 
-              {/* View Panel */}
+              {/* View Panel - Moss window chrome */}
+              <div className="rounded-xl border border-border bg-card p-2 sm:p-3">
+                <div className="flex items-center gap-1.5 px-1 pt-1" aria-hidden="true">
+                  <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
+                </div>
+                <div className="mt-1">
               {tab === "list" ? (
                 <PortsTable
                   ports={listQuery.data?.items ?? []}
@@ -415,6 +406,8 @@ function PortsExplorer() {
                   onSelect={(id) => setSelected(id)}
                 />
               )}
+                </div>
+              </div>
             </div>
           </div>
         </section>

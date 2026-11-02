@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Ship } from "lucide-react";
+import type { ReactNode } from "react";
 import type { Port } from "./types";
 
 interface PortWatchInfo {
@@ -36,7 +37,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+function SectionHeading({ children }: { children: ReactNode }) {
   return (
     <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
       {children}
@@ -61,7 +62,8 @@ export function PortWatchCard({ port }: { port: Port }) {
       });
       if (port.unlocode) params.set("locode", port.unlocode);
       const res = await fetch("/api/portwatch?" + params.toString());
-      if (!res.ok) throw new Error("PortWatch data unavailable");
+      if (!res.ok) throw new Err
+or("PortWatch data unavailable");
       return (await res.json()) as PortWatchResponse;
     },
     // Read-only historical stats: cache for a day, and never let an
@@ -112,7 +114,8 @@ export function PortWatchCard({ port }: { port: Port }) {
           />
           {activityRows.map(([label, v]) => (
             <Row key={label} label={label} value={(v as number).toLocaleString()} />
-          ))}
+         
+ ))}
           {info.industryTop1 && (
             <Row label="Dominant industry" value={info.industryTop1} />
           )}

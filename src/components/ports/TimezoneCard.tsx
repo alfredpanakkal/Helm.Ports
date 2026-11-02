@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Clock } from "lucide-react";
-import { Skeleton } from "@components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TimezoneData {
   zoneName: string;

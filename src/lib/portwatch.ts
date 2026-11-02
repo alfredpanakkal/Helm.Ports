@@ -58,6 +58,22 @@ function normalizeKey(s: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
+// PortWatch and WPI disagree on a handful of country names (verified
+// against the live PortWatch country list and src/lib/countryCodes.ts):
+// map them onto the WPI form. Keys/values are in normalizeKey form.
+const COUNTRY_ALIASES: Record<string, string> = {
+  cotedivoire: "ivorycoast",
+  russianfederation: "russia",
+  turkiye: "turkey",
+};
+
+/** normalizeKey plus a leading article and the known name variants. */
+function normalizeCountry(s: string): string {
+  const stripped = s.replace(/^the\s+/i, "");
+  const key = normalizeKey(stripped);
+  return COUNTRY_ALIASES[key] ?? key;
+}
+
 function toInfo(props: Record<string, unknown>): PortWatchInfo {
   const text = (v: unknown): string | null =>
     typeof v === "string" && v.trim() ? v.trim() : null;
@@ -112,7 +128,7 @@ function buildIndex(features: Record<string, unknown>[]): PortWatchIndex {
     const name = typeof props.portname === "string" ? props.portname : null;
     const country = typeof props.country === "string" ? props.country : null;
     if (name && country) {
-      const key = normalizeKey(name) + "|" + normalizeKey(country);
+      const key = normalizeKey(name) + "|" + normalizeCountry(country);
       if (!byNameCountry.has(key)) byNameCountry.set(key, info);
     }
   }
@@ -146,7 +162,7 @@ export async function matchPortWatch(lookup: PortWatchLookup): Promise<PortWatch
   if (lookup.name && lookup.country) {
     return (
       index.byNameCountry.get(
-        normalizeKey(lookup.name) + "|" + normalizeKey(lookup.country)
+        normalizeKey(lookup.name) + "|" + normalizeCountry(lookup.country)
       ) ?? null
     );
   }

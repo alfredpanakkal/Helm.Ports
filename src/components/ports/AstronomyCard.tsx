@@ -76,7 +76,7 @@ export function AstronomyCard({ latitude, longitude }: Props) {
   return (
     <div>
       <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <Sun className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Solar &amp; Lunar (today)
+        <Sun className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Solar &amp; Lunar (today)
       </h4>
       <Row label="Merpas (solar noon)" value={data.solar_noon} />
       <Row label="Sunrise / Sunset" value={data.sunrise + " / " + data.sunset} />
@@ -99,7 +99,7 @@ export function AstronomyCard({ latitude, longitude }: Props) {
           href="https://open-meteo.com"
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
+          className="font-medium text-accent-foreground underline underline-offset-2 hover:opacity-80"
         >
           Open-Meteo
         </a>

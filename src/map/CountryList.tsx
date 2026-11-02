@@ -67,7 +67,7 @@ export function CountryList({ countries, selected, loading, error, onSelect }: P
                   className={
                     "flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors cursor-pointer " +
                     (c.name === selected
-                      ? "bg-teal-600/15 font-medium text-teal-700 dark:text-teal-300"
+                      ? "bg-accent-foreground/15 font-medium text-accent-foreground"
                       : "text-foreground hover:bg-muted")
                   }
                 >

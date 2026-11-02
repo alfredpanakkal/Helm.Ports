@@ -28,8 +28,8 @@ function ThemeSwitcher() {
           className={[
             "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors cursor-pointer",
             theme === value
-              ? "border-teal-500/60 bg-teal-600/10 font-medium text-teal-700 dark:text-teal-400"
-              : "border-border bg-card text-muted-foreground hover:text-foreground hover:border-teal-500/30",
+              ? "border-accent-foreground/60 bg-accent-foreground/10 font-medium text-accent-foreground"
+              : "border-border bg-card text-muted-foreground hover:text-foreground hover:border-accent-foreground/30",
           ].join(" ")}
         >
           <Icon className="h-4 w-4" aria-hidden />
@@ -93,7 +93,7 @@ export function InfoSheet({
 
           <Section title="Authors">
             <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-teal-600/10 text-teal-700 dark:text-teal-400">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent-foreground/10 text-accent-foreground">
                 <Ship className="h-5 w-5" aria-hidden />
               </div>
               <div className="min-w-0">
@@ -104,7 +104,7 @@ export function InfoSheet({
                     href="https://github.com/alfredpanakkal"
                     target="_blank"
                     rel="noreferrer"
-                    className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
+                    className="font-medium text-accent-foreground underline underline-offset-2 hover:opacity-80"
                   >
                     @alfredpanakkal
                   </a>

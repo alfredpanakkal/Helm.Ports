@@ -74,7 +74,7 @@ function Toggle({
           className={
             "rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none transition-colors " +
             (active === o.value
-              ? "bg-teal-600 text-white"
+              ? "bg-sidebar-primary text-sidebar-primary-foreground"
               : "text-muted-foreground hover:text-foreground")
           }
         >
@@ -177,7 +177,7 @@ export function TideCard({ latitude, longitude }: Props) {
     <div className="pt-2">
       <div className="mb-1 flex items-center justify-between gap-2">
         <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <Waves className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Tide predictions
+          <Waves className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Tide predictions
         </h4>
         <div className="flex items-center gap-2">
           <Toggle
@@ -242,7 +242,7 @@ export function TideCard({ latitude, longitude }: Props) {
           href="https://open-meteo.com"
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
+          className="font-medium text-accent-foreground underline underline-offset-2 hover:opacity-80"
         >
           Open-Meteo
         </a>

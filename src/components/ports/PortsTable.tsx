@@ -28,14 +28,7 @@ import {
   MoonStar,
   AlertTriangle,
 } from "lucide-react";
-import { formatDepth, type Port } from "./types";
-
-const SIZE_BADGE: Record<string, string> = {
-  Major: "bg-teal-600 text-white",
-  Small: "bg-teal-500/90 text-white",
-  Minor: "bg-teal-400/80 text-white",
-  "Very Small": "bg-teal-300/70 text-teal-950",
-};
+import { formatDepth, PORT_SIZE_STYLES, type Port } from "./types";
 
 const SORT_COLUMNS = [
   { key: "wpi_port_name", label: "Port" },
@@ -81,9 +74,9 @@ export function PortsTable({
     if (sort !== k)
       return <ArrowUpDown className="ml-1 inline h-3 w-3 text-muted-foreground/50" aria-hidden />;
     return order === "asc" ? (
-      <ArrowUp className="ml-1 inline h-3 w-3 text-teal-600" aria-hidden />
+      <ArrowUp className="ml-1 inline h-3 w-3 text-accent-foreground" aria-hidden />
     ) : (
-      <ArrowDown className="ml-1 inline h-3 w-3 text-teal-600" aria-hidden />
+      <ArrowDown className="ml-1 inline h-3 w-3 text-accent-foreground" aria-hidden />
     );
   };
 
@@ -149,7 +142,7 @@ export function PortsTable({
                   <TableCell>
                     {p.port_size && p.port_size !== "unknown" ? (
                       <Badge
-                        className={`text-[11px] font-medium ${SIZE_BADGE[p.port_size] ?? "bg-muted text-foreground"}`}
+                        className={`text-[11px] font-medium ${PORT_SIZE_STYLES[p.port_size] ?? "bg-muted text-foreground"}`}
                       >
                         {p.port_size}
                       </Badge>

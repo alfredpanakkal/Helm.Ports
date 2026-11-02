@@ -293,7 +293,7 @@ export function PortsMap({ onSelect }: Props) {
               <div class="text-xs text-muted-foreground">${escapeHtml(p.c)}</div>
               <div class="mt-1 text-xs text-muted-foreground">UN/LOCODE: <span class="font-medium text-foreground">${p.u ? escapeHtml(p.u) : "—"}</span></div>
               <div class="text-xs text-muted-foreground">Local time: <span id="pp-time" class="font-medium text-foreground">…</span></div>
-              <button id="pp-more" type="button" class="mt-2 w-full rounded-md bg-teal-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-700">More details</button>
+              <button id="pp-more" type="button" class="mt-2 w-full rounded-md bg-accent-foreground px-3 py-1.5 text-xs font-medium text-background hover:opacity-80">More details</button>
             </div>`
           )
           .addTo(map);

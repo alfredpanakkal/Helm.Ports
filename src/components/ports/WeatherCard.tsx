@@ -164,7 +164,7 @@ export function WeatherCard({ latitude, longitude }: Props) {
     <div>
       <div className="mb-1 flex items-center justify-between gap-2">
         <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <CloudSun className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Weather
+          <CloudSun className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Weather
         </h4>
         <div
           role="group"
@@ -180,7 +180,7 @@ export function WeatherCard({ latitude, longitude }: Props) {
               className={
                 "rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none transition-colors " +
                 (unit === u
-                  ? "bg-teal-600 text-white"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : "text-muted-foreground hover:text-foreground")
               }
             >
@@ -193,7 +193,7 @@ export function WeatherCard({ latitude, longitude }: Props) {
         label="Conditions"
         value={
           <span className="inline-flex items-center gap-1.5">
-            <now.icon className="h-4 w-4 text-teal-600" aria-hidden />
+            <now.icon className="h-4 w-4 text-accent-foreground" aria-hidden />
             {now.label}
           </span>
         }
@@ -236,7 +236,7 @@ export function WeatherCard({ latitude, longitude }: Props) {
       {marine.data?.current && (
         <div className="mt-2">
           <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <Waves className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Sea state
+            <Waves className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Sea state
           </h4>
           <Row label="Sea" value={waveText(marine.data.current.combined)} />
           <Row label="Swell" value={waveText(marine.data.current.swell)} />
@@ -262,7 +262,7 @@ export function WeatherCard({ latitude, longitude }: Props) {
               <span className="text-[10px] font-medium text-muted-foreground">
                 {dayLabel(day.date, i)}
               </span>
-              <info.icon className="h-4 w-4 text-teal-600" aria-hidden />
+              <info.icon className="h-4 w-4 text-accent-foreground" aria-hidden />
               <span className="text-[10px] font-semibold tabular-nums text-foreground">
                 {stripTemp(day.tMax, unit)}
               </span>
@@ -284,7 +284,7 @@ export function WeatherCard({ latitude, longitude }: Props) {
           href="https://open-meteo.com"
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
+          className="font-medium text-accent-foreground underline underline-offset-2 hover:opacity-80"
         >
           Open-Meteo
         </a>

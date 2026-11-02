@@ -229,8 +229,9 @@ function PortsExplorer() {
 
       <main className="flex-1">
         {/* Hero + search + stats */}
-        <section className="hero-grid border-b border-border bg-background">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-16">
+        <section className="relative border-b border-border bg-background">
+          <div className="hero-grid pointer-events-none absolute inset-0" aria-hidden="true" />
+          <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-16">
             <div className="max-w-3xl">
               <h1 className="text-3xl font-medium tracking-tight text-foreground sm:text-4xl lg:text-5xl">
                 Every port. Every depth. One search.

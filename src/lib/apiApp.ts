@@ -11,7 +11,6 @@ import {
 } from "./ports.ts";
 import { fetchAstronomy } from "./astronomy.ts";
 import { fetchTimezone } from "./timezone.ts";
-import { matchPortWatch } from "./portwatch.ts";
 
 const SORTABLE = new Set([
   "wpi_port_name",
@@ -57,7 +56,8 @@ function matchesQuery(p: PortRecord, q: string): boolean {
  *   GET /api/portwatch  - historical vessel activity (proxied World Bank PortWatch)
  *
  * Shared by server.ts (local dev / self-hosting, single port with the Vite
- * middleware or static dist) and api/index.ts (Vercel serverless function).
+ * middleware or static dist) and api/index.ts (Vercel serverless fun
+ction).
  * Contains no listener and no static-file serving so both entry points stay
  * free of deployment-specific concerns. Querying
  stays in-memory via
@@ -117,6 +117,7 @@ export function buildApiApp(): ReturnType<typeof express> {
         sizeCounts: [...sizeCounts.entries()].sort((a, b) => b[1] - a[1]),
         vesselCounts: [...vesselCounts.entries()].sort((a, b) => b[1] - a[1]),
         topCountries: countryCounts.slice(0, 10),
+
         allCountries: countryCounts,
         depthBins: bins,
       });
@@ -160,7 +161,8 @@ s:", err);
       const vesselSizeSet = vesselSizes.length ? new Set(vesselSizes) : null;
       const restrSet = new Set(restrictions);
 
-      let filtered = all.filter((p) => {
+      let filter
+ed = all.filter((p) => {
         if (q && !matchesQuery(p, q)) return false;
         if (countrySet && !countrySet.has(p.country)) retur
 n false;
@@ -207,7 +209,8 @@ n false;
           if (rb === 0) return -1;
           cmp = ra - rb;
         } else {
-          const av = (a[sortKey as keyof PortRecord] as number | string | null) ?? null;
+          const av = (a[sortKey as keyof P
+ortRecord] as number | string | null) ?? null;
           const bv = (b[sortKey as keyof PortRecord] as number | string | null) ?? null;
  
          if (av === null && bv === null) cmp = 0;
@@ -270,7 +273,8 @@ n false;
   app.get("/api/astronomy", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
-      const lng = Number(req.query.lng);
+      const lng = 
+Number(req.query.lng);
       if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
         res.status(400).j
 son({ error: "Invalid coordinates" });
@@ -318,9 +322,13 @@ son({ error: "Invalid coordinates" });
       const name = typeof req.query.name === "string" ? req.query.name.trim() : "";
       const country = typeof req.query.country === "string" ? req.query.country.trim() : "";
       if (!name || !country) {
-        res.status(400).json({ error: "Missing port name or country" });
+        res.status(400).json({ erro
+r: "Missing port name or country" });
         return;
       }
+      // Lazy import: keeps PortWatch out of the cold-start module graph so
+      // any failure in it (bundling or upstream) cannot take down the core API.
+      const { matchPortWatch } = await import("./portwatch.ts");
       const match = await matchPortWatch({ locode, portid: null, name, country });
       // No match is a normal outcome, not an error - the client hides the section.
       res.set("Cache-Control", "public, max-age=3600, s-maxage=86400");
@@ -369,7 +377,8 @@ son({ error: "Invalid coordinates" });
   app.get("/api/weather", async (req: Request, res: Response) => {
     try {
       const lat = Number(req.query.lat);
-      const lng = Number(req.query.lng);
+      const lng = Num
+ber(req.query.lng);
       if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
         res.status(400).json({ error: "Invalid coordinates" });
         return;
@@ -416,7 +425,8 @@ p.get("/api/marine", async (req: Request, res: Response) => {
         current:
           "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period,wind_wave_height,wind_wave_direction,wind_wave_period",
         daily:
-          "wave_height_max,wave_direction_dominant,wave_period_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max,wind_wave_height_max,wind_wave_direction_dominant,wind_wave_period_max",
+          "wave_height_max,wave_direction_dominant,wave_period_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max,wind_wave_height_max,wind_wave_d
+irection_dominant,wind_wave_period_max",
         timezone: "auto",
         forecast_days: "7",
       });

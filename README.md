@@ -200,7 +200,7 @@ Common query parameters:
 │   ├── components/ports/         # PortMap, PortsTable, FilterSidebar, PortDetailSheet
 │   ├── components/ui/             # Accessible UI primitives
 │   ├── lib/ports.ts              # Data layer + ranking helpers
-│   ├── lib/astronomy.ts        # Sun/moon transit fetcher + 12 h cache
+│   ├── lib/astronomy.ts          # Sun/moon transit fetcher + 12 h cache
 │   └── App.tsx
 ├── server.ts                     # Express API + Vite middleware
 └── package.json

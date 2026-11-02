@@ -44,6 +44,7 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 │   ├── components/
 │   │   ├── ports/
 │   │   │   ├── FilterSidebar.tsx  # Search/filter controls (country, depths, tides, restrictions)
+│   │   │   ├── AstronomyCard.tsx  # Sun/moon transit panel (Merpas, twilight, moon phase)
 │   │   │   ├── PortDetailSheet.tsx# Detailed slide-over view for individual port
 │   │   │   ├── PortMap.tsx        # Interactive SVG map, LOD rendering, projection
 │   │   │   ├── PortsTable.tsx     # Paginated and sortable table
@@ -52,6 +53,7 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 │   │   └── ui/                    # Curated UI primitives (button, sheet, table, etc.)
 │   ├── lib/
 │   │   ├── ports.ts               # Core data layer: getPorts(), getMetadata(), country mapping
+│   │   ├── astronomy.ts           # Sun/moon transit fetcher: SunriseSunset.io proxy + 12 h cache
 │   │   └── utils.ts               # cn() class merging utility
 │   ├── App.tsx                    # Main orchestrator component
 │   ├── index.css                  # Tailwind v4 import + @theme tokens
@@ -110,6 +112,7 @@ If dev server state needs refreshing after server or dependency changes:
 - **Always preserve in-memory caching**: When querying `data/ports.json`, call `getPorts()` in `src/lib/ports.ts`. It loads and parses the file once into memory and returns the cached array. Never parse `ports.json` on every HTTP request.
 - **Always keep the map payload compact**: When adding new fields to the map, keep them in `format=points` as single-letter or abbreviated keys (e.g., `i`, `n`, `c`, `la`, `lo`, `d`, `t`) to preserve the ~150 KB payload size.
 - **Always keep nulls at the end when sorting**: When sorting ports by depth or tidal range, null values must sort to the end of the list in both ascending and descending directions.
+- **Always route astronomy data through the server proxy**: Sun/moon transit data comes from `GET /api/astronomy` (backed by `src/lib/astronomy.ts`, which proxies SunriseSunset.io and caches success responses for 12 h, keyed on 2-decimal coordinates). Never call `api.sunrisesunset.io` from the browser; never cache failed responses (a transient upstream error must not block a port for 12 h).
 - **Always support both Light and Dark themes**: Use Tailwind semantic classes so elements contrast properly in both themes. Map oceans, land masses, and borders have explicit light and dark variations.
 
 ---
@@ -134,6 +137,7 @@ If dev server state needs refreshing after server or dependency changes:
 | **Equirectangular Projection Bounds** | Longitude ranges [-180, 180] and Latitude [-90, 90]. | `project(lon, lat)` maps to `x = ((lon + 180)/360) * 1000` and `y = ((90 - lat)/180) * 500`. Do not modify viewBox dimensions `1000 x 500` without updating `public/land.json`. |
 | **Missing Channel Sounding Data** | ~2,278 ports do not record a channel depth. | Map dots without depth must use `--dot-none` (`#94a3b8` light, `#475569` dark). Never default missing depths to `0m`. |
 | **Country Name Divergence** | WPI data has legacy abbreviations (e.g. `U.S.A.`, `Congo, D.R.`). | Use `COUNTRY_FIXES` in `src/lib/ports.ts` so filter dropdowns match normalized country names. |
+| **Nullable Moon Rise/Set** | SunriseSunset.io omits `moonrise`/`moonset` on days the moon stays up/down. | Type them `string \| null` (as in `src/lib/astronomy.ts`) and render `—` when null. Never treat missing as "12:00 AM". |
 
 ---
 

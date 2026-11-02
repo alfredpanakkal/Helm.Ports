@@ -8,6 +8,7 @@ import {
   vesselSizeRank,
   type PortRecord,
 } from "./ports.ts";
+import { fetchAstronomy } from "./astronomy.ts";
 
 const SORTABLE = new Set([
   "wpi_port_name",
@@ -238,6 +239,28 @@ export function buildApiApp(): ReturnType<typeof express> {
     } catch (err) {
       console.error("Error retrieving port:", err);
       res.status(500).json({ error: "Failed to retrieve port" });
+    }
+  });
+
+  // API Astronomy — Sun & Moon transit times for a port's coordinates
+  app.get("/api/astronomy", async (req: Request, res: Response) => {
+    try {
+      const lat = Number(req.query.lat);
+      const lng = Number(req.query.lng);
+      if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
+        res.status(400).json({ error: "Invalid coordinates" });
+        return;
+      }
+      const data = await fetchAstronomy(lat, lng);
+      if (!data) {
+        res.status(502).json({ error: "Astronomy data temporarily unavailable" });
+        return;
+      }
+      res.set("Cache-Control", "public, max-age=300, s-maxage=43200");
+      res.json(data);
+    } catch (err) {
+      console.error("Error serving astronomy data:", err);
+      res.status(500).json({ error: "Failed to serve astronomy data" });
     }
   });
 

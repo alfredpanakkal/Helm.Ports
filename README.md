@@ -79,6 +79,7 @@ Viewport culling and selected-port highlighting run on every pan/zoom frame (SVG
 
 - Sortable, paginated table (10–100 rows per page) with **null-safe ordering** — missing soundings always sort last
 - Slide-over detail sheet with all soundings: channel, anchorage, cargo pier, oil terminal
+- Country flag beside the country name in the detail sheet (key-free flagcdn.com images)
 - Restriction badges and tidal-range display
 
 </details>
@@ -255,6 +256,7 @@ Common query parameters:
 - **Astronomy:** [SunriseSunset.io](https://sunrisesunset.io) — daily sun/moon transit times per port (free API, no key, cached 12 h server-side)
 - **Weather, sea state & tides:** [Open-Meteo](https://open-meteo.com) Forecast + Marine APIs — key-free, proxied server-side with CDN caching
 - **Base cartography:** © OpenStreetMap contributors (raster tiles) with an optional OpenSeaMap seamarks overlay; Natural Earth vectors power the offline SVG fallback
+- **Country flags:** [flagcdn.com](https://flagcdn.com) — free CDN, no API key, addressed by the ISO 3166-1 alpha-2 codes already mapped in `src/lib/countryCodes.ts`
 
 > [!WARNING]
 > Soundings are single recorded observations. They do not reflect real-time silting, dredging, or weather.

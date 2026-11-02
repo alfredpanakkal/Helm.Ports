@@ -24,7 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeProvider, useTheme } from "@/components/theme-provider";
 import {
   Search,
-  Github,
+  Info,
   Sun,
   Moon,
   SlidersHorizontal,
@@ -41,6 +41,7 @@ import { PortsTable } from "@/components/ports/PortsTable";
 import { PortMap } from "@/components/ports/PortMap";
 import { PortsMap as PortsMapLibre } from "@/map/PortsMap";
 import { PortDetailSheet } from "@/components/ports/PortDetailSheet";
+import { InfoSheet } from "@/components/InfoSheet";
 import {
   activeFilterCount,
   buildQuery,
@@ -127,6 +128,7 @@ function PortsExplorer() {
   const [tab, setTab] = useState<"list" | "map">("list");
   const [selected, setSelected] = useState<Port | number | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const debouncedQ = useDebouncedValue(filters.q, 300);
 
@@ -225,15 +227,14 @@ function PortsExplorer() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-9 gap-1.5" asChild>
-              <a
-                href="https://github.com/tayljordan/ports"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Github className="h-4 w-4" aria-hidden />
-                <span className="hidden sm:inline">Dataset</span>
-              </a>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 cursor-pointer"
+              onClick={() => setInfoOpen(true)}
+              aria-label="About, credits and theme"
+            >
+              <Info className="h-4 w-4" aria-hidden />
             </Button>
             <ThemeToggle />
           </div>
@@ -423,21 +424,6 @@ function PortsExplorer() {
       <footer className="mt-auto border-t border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 py-6">
           <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-            <p className="text-xs text-muted-foreground">
-              Data:{" "}
-              <a
-                href="https://github.com/tayljordan/ports"
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
-              >
-                tayljordan/ports
-              </a>{" "}
-              (MIT) · NGA Publication 150, World Port Index, 2019 edition
-              {stats
-                ? ` · schema v${stats.meta.schema_version} · ${stats.meta.last_updated}`
-                : ""}
-            </p>
             <p className="text-xs text-muted-foreground/70">
               Not for navigation — always consult current nautical charts.
             </p>
@@ -447,6 +433,9 @@ function PortsExplorer() {
 
       {/* Detail Slide-over Sheet */}
       <PortDetailSheet port={selected} onClose={() => setSelected(null)} />
+
+      {/* About / credits / theme panel */}
+      <InfoSheet open={infoOpen} onOpenChange={setInfoOpen} />
     </div>
   );
 }

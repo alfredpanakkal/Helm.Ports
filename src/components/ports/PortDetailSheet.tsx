@@ -16,7 +16,7 @@ import { AstronomyCard } from "./AstronomyCard";
 import { TimezoneCard } from "./TimezoneCard";
 import { WeatherCard } from "./WeatherCard";
 import { TideCard } from "./TideCard";
-import { formatRange, type Port } from "./types";
+import { formatRange, PORT_SIZE_STYLES, type Port } from "./types";
 
 interface Props {
   port: Port | number | null; // full record from table, or WPI id from map
@@ -45,7 +45,7 @@ function PortDetailBody({ port }: { port: Port }) {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-2">
         {port.port_size && port.port_size !== "unknown" && (
-          <Badge className="bg-teal-600 text-white">{port.port_size} port</Badge>
+          <Badge className={PORT_SIZE_STYLES[port.port_size] ?? "bg-muted text-foreground"}>{port.port_size} port</Badge>
         )}
         {port.max_vessel_size && (
           <Badge variant="outline" className="capitalize">
@@ -67,7 +67,7 @@ function PortDetailBody({ port }: { port: Port }) {
 
       <div>
         <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Location
+          <MapPin className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Location
         </h4>
         <Row label="Country" value={port.country} />
         {port.state && <Row label="State / Region" value={port.state} />}
@@ -82,7 +82,7 @@ function PortDetailBody({ port }: { port: Port }) {
 
       <div>
         <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <Ruler className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Depths (meters)
+          <Ruler className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Depths (meters)
         </h4>
         <Row
           label="Channel"
@@ -104,7 +104,7 @@ function PortDetailBody({ port }: { port: Port }) {
 
       <div>
         <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          <Waves className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Tides
+          <Waves className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Tides
         </h4>
         <Row
           label="Mean tidal range"
@@ -132,7 +132,7 @@ function PortDetailBody({ port }: { port: Port }) {
           href="https://github.com/tayljordan/ports"
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
+          className="font-medium text-accent-foreground underline underline-offset-2 hover:opacity-80"
         >
           tayljordan/ports
         </a>{" "}
@@ -166,7 +166,7 @@ export function PortDetailSheet({ port, onClose }: Props) {
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-xl">
-            <Anchor className="h-5 w-5 text-teal-600" aria-hidden />
+            <Anchor className="h-5 w-5 text-accent-foreground" aria-hidden />
             {isLoading && !resolved ? <Skeleton className="h-6 w-40" /> : title}
           </SheetTitle>
           <SheetDescription>

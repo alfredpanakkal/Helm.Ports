@@ -57,7 +57,7 @@ export function FilterSidebar({ filters, setFilters, countries, resultCount }: P
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Anchor className="h-4 w-4 text-teal-600" aria-hidden />
+          <Anchor className="h-4 w-4 text-accent-foreground" aria-hidden />
           Filters
         </div>
         <Button
@@ -104,8 +104,8 @@ export function FilterSidebar({ filters, setFilters, countries, resultCount }: P
                 onClick={() => toggle("portSize", s.key)}
                 className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
                   active
-                    ? "border-teal-600 bg-teal-600 text-white"
-                    : "border-border bg-background text-muted-foreground hover:border-teal-600/50 hover:text-foreground"
+                    ? "border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "border-border bg-background text-muted-foreground hover:border-accent-foreground/50 hover:text-foreground"
                 }`}
               >
                 {s.label}
@@ -128,8 +128,8 @@ export function FilterSidebar({ filters, setFilters, countries, resultCount }: P
                 onClick={() => toggle("vesselSize", s.key)}
                 className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
                   active
-                    ? "border-teal-600 bg-teal-600 text-white"
-                    : "border-border bg-background text-muted-foreground hover:border-teal-600/50 hover:text-foreground"
+                    ? "border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "border-border bg-background text-muted-foreground hover:border-accent-foreground/50 hover:text-foreground"
                 }`}
               >
                 {s.label}
@@ -197,7 +197,7 @@ export function FilterSidebar({ filters, setFilters, countries, resultCount }: P
           {RESTRICTIONS.map((r) => (
             <label
               key={r.key}
-              className="flex cursor-pointer items-center gap-2 rounded-md border border-border px-2.5 py-2 text-xs hover:border-teal-600/50"
+              className="flex cursor-pointer items-center gap-2 rounded-md border border-border px-2.5 py-2 text-xs hover:border-accent-foreground/50"
             >
               <Checkbox
                 checked={filters.restriction.includes(r.key)}
@@ -209,7 +209,7 @@ export function FilterSidebar({ filters, setFilters, countries, resultCount }: P
         </div>
       </div>
 
-      <div className="rounded-lg border border-teal-600/20 bg-teal-600/5 p-3">
+      <div className="rounded-lg border border-accent-foreground/20 bg-accent-foreground/5 p-3">
         <ScrollArea className="h-auto max-h-40">
           <div className="text-xs">
             <p className="mb-1.5 font-medium text-foreground">Top countries</p>
@@ -218,7 +218,7 @@ export function FilterSidebar({ filters, setFilters, countries, resultCount }: P
                 <li key={name} className="flex justify-between gap-2">
                   <button
                     type="button"
-                    className="truncate text-left text-muted-foreground hover:text-teal-700 hover:underline dark:hover:text-teal-400"
+                    className="truncate text-left text-muted-foreground hover:text-accent-foreground hover:underline"
                     onClick={() => setFilters({ ...filters, country: name })}
                   >
                     {name}

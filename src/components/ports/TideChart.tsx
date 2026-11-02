@@ -131,7 +131,7 @@ export function TideChart({ day, unit, isToday, nowMinutes }: Props) {
         role="img"
         aria-label={aria}
         tabIndex={0}
-        className="w-full rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
+        className="w-full rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);
           setFromPointer(e);
@@ -177,7 +177,7 @@ export function TideChart({ day, unit, isToday, nowMinutes }: Props) {
             {fmtTime(m)}
           </text>
         ))}
-        <path d={path} fill="none" className="stroke-teal-600" strokeWidth={2} />
+        <path d={path} fill="none" className="stroke-accent-foreground" strokeWidth={2} />
         {isToday && nowMinutes >= 0 && nowMinutes <= 1440 && (
           <g>
             <line x1={nowX} x2={nowX} y1={PAD.t} y2={H - PAD.b} className="stroke-muted-foreground" strokeWidth={1} strokeDasharray="4 3" />
@@ -188,7 +188,7 @@ export function TideChart({ day, unit, isToday, nowMinutes }: Props) {
         )}
         {high && (
           <g>
-            <circle cx={xOf(clampMinutes(high.minutes))} cy={yOf(high.height)} r={4} className="fill-teal-600" />
+            <circle cx={xOf(clampMinutes(high.minutes))} cy={yOf(high.height)} r={4} className="fill-accent-foreground" />
             <text
               x={xOf(clampMinutes(high.minutes))}
               y={yOf(high.height) - 8}

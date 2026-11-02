@@ -124,3 +124,13 @@ export function formatRange(min: number | null, max: number | null): string {
   if (min != null && max != null) return `${min.toFixed(1)}–${max.toFixed(1)} m`;
   return formatDepth(min ?? max);
 }
+
+/** Moss port-size ramp: one hue at four strengths, big → small.
+ *  The label text is always shown, so colour never carries meaning alone.
+ *  Light/dark contrast pairs are asserted in src/lib/contrast.test.ts. */
+export const PORT_SIZE_STYLES: Record<string, string> = {
+  Major: "border-transparent bg-sidebar-primary text-sidebar-primary-foreground",
+  Small: "border-transparent bg-[#A9D3BB] text-[#16301F] dark:bg-[#2F5A44] dark:text-[#E9EDE9]",
+  Minor: "border-accent-foreground/50 bg-accent text-accent-foreground",
+  "Very Small": "border-border bg-transparent text-muted-foreground",
+};

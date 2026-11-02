@@ -74,6 +74,24 @@ test("dark theme status and control pairs pass 3:1", () => {
   atLeast("#8FCBA8", "#0E1210", 3, "dark focus ring");
 });
 
+test("port-size ramp passes WCAG AA in both themes (4.5:1)", () => {
+  atLeast("#FFFFFF", "#2F6B4F", 4.5, "Major light");
+  atLeast("#0E1210", "#8FCBA8", 4.5, "Major dark");
+  atLeast("#16301F", "#A9D3BB", 4.5, "Small light");
+  atLeast("#E9EDE9", "#2F5A44", 4.5, "Small dark");
+  atLeast("#2F6B4F", "#DDEFE0", 4.5, "Minor light");
+  atLeast("#B7E2C9", "#1C2A22", 4.5, "Minor dark");
+  atLeast("#5D665F", "#FFFFFF", 4.5, "Very Small light");
+  atLeast("#9FA69F", "#151A17", 4.5, "Very Small dark");
+});
+
+test("checkbox, slider and chip controls pass 3:1", () => {
+  atLeast("#2F6B4F", "#FFFFFF", 3, "checked checkbox / slider range on card");
+  atLeast("#2F6B4F", "#F0F2EE", 3, "slider range on muted track");
+  atLeast("#8FCBA8", "#151A17", 3, "dark control fill on card");
+  atLeast("#8FCBA8", "#1B211E", 3, "dark slider range on muted track");
+});
+
 test("src/index.css defines the Moss palette verbatim", () => {
   const tokens: Array<[string, string]> = [
     ["--background", "#FAFAF7"],
@@ -87,6 +105,7 @@ test("src/index.css defines the Moss palette verbatim", () => {
     ["--destructive", "#B42318"],
     ["--warning", "#A16207"],
     ["--ring", "#2F6B4F"],
+    ["--sidebar-primary", "#2F6B4F"],
     ["--input", "#6F7770"],
   ];
   for (const [name, value] of tokens) {
@@ -98,4 +117,5 @@ test("src/index.css defines the Moss palette verbatim", () => {
   assert.ok(css.includes("--background: #0E1210;"), "dark background missing");
   assert.ok(css.includes("--primary-foreground: #B7E2C9;"), "dark primary pair missing");
   assert.ok(css.includes("--input: #6B756C;"), "dark input missing");
+  assert.ok(css.includes("--sidebar-primary: #8FCBA8;"), "dark moss control fill missing");
 });

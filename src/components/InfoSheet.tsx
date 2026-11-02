@@ -109,6 +109,7 @@ export function InfoSheet({
                     @alfredpanakkal
                   </a>
                 </p>
+                <p className="text-xs text-muted-foreground/70">Third Officer on ocean-going tankers · Full-Stack Developer</p>
                 <p className="text-xs text-muted-foreground/70">India · K-Line</p>
               </div>
             </div>

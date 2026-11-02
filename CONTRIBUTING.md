@@ -21,8 +21,10 @@ Thank you for your interest in improving **Helm.Ports**! This guide outlines our
 
 3. **Verify compilation & types**:
    ```bash
-   npm run lint   # checks TypeScript via tsc --noEmit
-   npm run build  # verifies production build bundle
+   npm run lint    # checks TypeScript via tsc --noEmit
+   npm run build   # verifies production build bundle
+   npm test        # ports filtering/sorting + map bounds invariants
+   node --import tsx --test src/lib/contrast.test.ts   # WCAG AA contrast pairs
    ```
 
 ---
@@ -71,8 +73,9 @@ fix(table): sort null channel depths to end on descending order
    ```bash
    npm run lint
    npm run build
+   npm test
    ```
-   Both commands must pass with zero errors.
+   All commands must pass with zero errors.
 3. **Describe Changes Clearly**:
    - Provide a high-level summary of the problem and solution.
    - Include before/after screenshots or recordings for any UI changes.
@@ -86,7 +89,7 @@ fix(table): sort null channel depths to end on descending order
 - **TypeScript Strictness**: Do not introduce `any` types. Provide comprehensive interface definitions in `src/components/ports/types.ts`.
 - **Zero-Regressions on In-Memory Speed**: Any API endpoint changes must execute in under 10ms for 5,410 records.
 - **Component Modularity**: Keep components focused. Complex filtering logic belongs in `src/lib/` or custom hooks, not inline within JSX.
-- **Accessibility (a11y)**: Ensure interactive elements have valid `aria-label` attributes, keyboard accessibility, and color contrast matching WCAG AA standards in both light and dark themes.
+- **Accessibility (a11y)**: Ensure interactive elements have valid `aria-label` attributes and keyboard accessibility. Color contrast must match WCAG AA in both themes — use the moss semantic tokens from `src/index.css` (never hard-coded palette colours); `src/lib/contrast.test.ts` pins the accepted pairs (text >= 4.5:1, control fills >= 3:1) and must stay green.
 
 ---
 

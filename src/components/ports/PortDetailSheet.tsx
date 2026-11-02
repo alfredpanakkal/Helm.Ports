@@ -15,6 +15,7 @@ import { MapPin, Anchor, Ruler, Waves } from "lucide-react";
 import { AstronomyCard } from "./AstronomyCard";
 import { TimezoneCard } from "./TimezoneCard";
 import { WeatherCard } from "./WeatherCard";
+import { TideCard } from "./TideCard";
 import { formatRange, type Port } from "./types";
 
 interface Props {
@@ -114,6 +115,8 @@ function PortDetailBody({ port }: { port: Port }) {
           }
         />
       </div>
+
+      <TideCard latitude={port.latitude} longitude={port.longitude} />
 
       <WeatherCard latitude={port.latitude} longitude={port.longitude} />
 

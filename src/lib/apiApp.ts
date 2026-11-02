@@ -50,6 +50,7 @@ function matchesQuery(p: PortRecord, q: string): boolean {
  *   GET /api/weather    - current conditions + 7-day outlook (proxied Open-Meteo)
  *   GET /api/marine     - sea state (proxied Open-Meteo Marine API)
  *   GET /api/timezone  - zone, UTC offset & DST calendar (proxied TimeZoneDB)
+ *   GET /api/tide     - hourly sea level incl. tides (proxied Open-Meteo Marine)
  *
  * Shared by server.ts (local dev / self-hosting, single port with the Vite
  * middleware or static dist) and api/index.ts (Vercel serverless function).
@@ -287,6 +288,39 @@ export function buildApiApp(): ReturnType<typeof express> {
     } catch (err) {
       console.error("Error serving timezone data:", err);
       res.status(500).json({ error: "Failed to serve timezone data" });
+    }
+  });
+
+  // API Tide — hourly sea level height including tides (proxied Open-Meteo Marine)
+  app.get("/api/tide", async (req: Request, res: Response) => {
+    try {
+      const lat = Number(req.query.lat);
+      const lng = Number(req.query.lng);
+      if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
+        res.status(400).json({ error: "Invalid coordinates" });
+        return;
+      }
+      const params = new URLSearchParams({
+        latitude: String(lat),
+        longitude: String(lng),
+        hourly: "sea_level_height_msl",
+        timezone: "auto",
+        past_days: "1",
+        forecast_days: "2",
+      });
+      const upstream = await fetch(
+        "https://marine-api.open-meteo.com/v1/marine?" + params.toString()
+      );
+      if (!upstream.ok) {
+        // Like /api/marine: outside model coverage is normal for inland ports
+        res.status(502).json({ error: "Tide data unavailable for this location" });
+        return;
+      }
+      res.set("Cache-Control", "public, max-age=300, s-maxage=1800");
+      res.json(await upstream.json());
+    } catch (err) {
+      console.error("Error serving tide data:", err);
+      res.status(500).json({ error: "Failed to serve tide data" });
     }
   });
 

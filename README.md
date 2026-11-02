@@ -169,6 +169,7 @@ See [docs/architecture.md](docs/architecture.md) for the full deep-dive.
 | `GET /api/ports/:id` | Single port by WPI ID |
 | `GET /api/astronomy` | Sun & moon transit times for `?lat=&lng=` (cached 12 h) |
 | `GET /api/timezone` | Time zone, UTC offset & DST calendar for `?lat=&lng=` (cached 12 h) |
+| `GET /api/tide` | Hourly sea level incl. tides for `?lat=&lng=` |
 | `GET /api/stats` | Aggregates: country counts, port/vessel size distributions, depth bins |
 
 Common query parameters:

@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "node --import tsx --test src/lib/bounds.test.ts src/lib/contrast.test.ts",
+    "test": "node --import tsx --test src/lib/bounds.test.ts src/lib/ports.test.ts",
     "data:unlocode": "tsx scripts/join-unlocode.ts"
   },
   "dependencies": {

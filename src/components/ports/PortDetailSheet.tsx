@@ -17,6 +17,7 @@ import { TimezoneCard } from "./TimezoneCard";
 import { WeatherCard } from "./WeatherCard";
 import { TideCard } from "./TideCard";
 import { formatRange, PORT_SIZE_STYLES, type Port } from "./types";
+import { getCountryIso2 } from "@/lib/countryCodes";
 
 interface Props {
   port: Port | number | null; // full record from table, or WPI id from map
@@ -40,6 +41,8 @@ function PortDetailBody({ port }: { port: Port }) {
   if (port.entrance_restriction_heavy_swell) restrictions.push("Heavy swell");
   if (port.entrance_restriction_ice) restrictions.push("Ice");
   if (port.entrance_restriction_other) restrictions.push("Other");
+
+  const iso2 = getCountryIso2(port.country)?.toLowerCase();
 
   return (
     <div className="flex flex-col gap-5">
@@ -69,7 +72,28 @@ function PortDetailBody({ port }: { port: Port }) {
         <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <MapPin className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Location
         </h4>
-        <Row label="Country" value={port.country} />
+        <Row
+          label="Country"
+          value={
+            <span className="inline-flex items-center gap-2">
+              {iso2 && (
+                <img
+                  src={`https://flagcdn.com/w40/${iso2}.png`}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  width={24}
+                  height={16}
+                  onError={(e) => {
+                    e.currentTarget.hidden = true;
+                  }}
+                  className="rounded-sm ring-1 ring-border"
+                />
+              )}
+              {port.country}
+            </span>
+          }
+        />
         {port.state && <Row label="State / Region" value={port.state} />}
         {port.point_of_interest && (
           <Row label="Point of interest" value={port.point_of_interest} />

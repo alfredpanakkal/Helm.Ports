@@ -101,30 +101,21 @@ function waveState(
 }
 
 /**
- * Sea state for a port's coordinates via the free Open-Meteo Marine API
- * (marine-api.open-meteo.com, keyless). Wave models only cover open and
- * coastal waters, so inland/river ports often have no data. Returns null
- * for "no data here" and for any upstream error — callers must simply
- * hide the section, never treat it as an error state.
+ * Sea state for a port's coordinates via the app's marine proxy
+ * (GET /api/marine), which forwards to the free Open-Meteo Marine API
+ * and sets CDN cache headers. Wave models only cover open and coastal
+ * waters, so inland/river ports often have no data — the proxy answers
+ * 502 there. Returns null for "no data here" and for any upstream
+ * error — callers must simply hide the section, never treat it as an
+ * error state.
  */
 export async function fetchMarineWeather(
   latitude: number,
   longitude: number
 ): Promise<PortMarine | null> {
-  const params = new URLSearchParams({
-    latitude: String(latitude),
-    longitude: String(longitude),
-    current:
-      "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period,wind_wave_height,wind_wave_direction,wind_wave_period",
-    daily:
-      "wave_height_max,wave_direction_dominant,wave_period_max,swell_wave_height_max,swell_wave_direction_dominant,swell_wave_period_max,wind_wave_height_max,wind_wave_direction_dominant,wind_wave_period_max",
-    timezone: "auto",
-    forecast_days: "7",
-  });
-
   try {
     const res = await fetch(
-      "https://marine-api.open-meteo.com/v1/marine?" + params.toString()
+      "/api/marine?lat=" + latitude + "&lng=" + longitude
     );
     if (!res.ok) return null;
 

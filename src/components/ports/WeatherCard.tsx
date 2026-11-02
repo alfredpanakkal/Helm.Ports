@@ -92,8 +92,9 @@ function fetchedAgo(timestampMs: number): string {
 
 /**
  * Current conditions and 7-day outlook for a port's coordinates, in the
- * port's local time zone. Data comes directly from the keyless
- * Open-Meteo API and is cached per rounded coordinate for 30 minutes.
+ * port's local time zone. Data comes from the app's /api/weather and
+ * /api/marine proxies (backed by Open-Meteo) and is cached per rounded
+ * coordinate for 30 minutes.
  */
 export function WeatherCard({ latitude, longitude }: Props) {
   const hasCoords = Number.isFinite(latitude) && Number.isFinite(longitude);

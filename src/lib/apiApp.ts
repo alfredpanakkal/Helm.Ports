@@ -31,7 +31,7 @@ function parseList(param: unknown): string[] {
     .filter(Boolean);
 }
 
-function matchesQuery(p: PortRecord, q: string): boolean {
+export function matchesQuery(p: PortRecord, q: string): boolean {
   const needle = q.toLowerCase();
   return (
     p.wpi_port_name.toLowerCase().includes(needle) ||

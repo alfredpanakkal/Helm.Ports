@@ -1,11 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CloudSun, RotateCcw } from "lucide-react";
 import { fetchPortWeather } from "@/lib/weather";
 import { describeWeather } from "./weatherCodes";
+
+type TempUnit = "c" | "f";
+
+const UNIT_STORAGE_KEY = "helmports-weather-unit";
+
+function loadStoredUnit(): TempUnit {
+  try {
+    return window.localStorage.getItem(UNIT_STORAGE_KEY) === "f" ? "f" : "c";
+  } catch {
+    // Storage unavailable (private mode etc.) — fall back to °C
+    return "c";
+  }
+}
 
 interface Props {
   latitude: number;
@@ -38,8 +52,16 @@ function dayLabel(date: string, index: number): string {
   });
 }
 
-function temp(v: number | null): string {
-  return v == null ? "—" : Math.round(v) + "°C";
+function temp(v: number | null, unit: TempUnit): string {
+  if (v == null) return "—";
+  return unit === "f"
+    ? Math.round((v * 9) / 5 + 32) + "°F"
+    : Math.round(v) + "°C";
+}
+
+function stripTemp(v: number | null, unit: TempUnit): string {
+  if (v == null) return "—";
+  return Math.round(unit === "f" ? (v * 9) / 5 + 32 : v) + "°";
 }
 
 /**
@@ -49,6 +71,15 @@ function temp(v: number | null): string {
  */
 export function WeatherCard({ latitude, longitude }: Props) {
   const hasCoords = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const [unit, setUnit] = useState<TempUnit>(loadStoredUnit);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(UNIT_STORAGE_KEY, unit);
+    } catch {
+      // Storage unavailable — the preference just won't persist
+    }
+  }, [unit]);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["weather", latitude.toFixed(2), longitude.toFixed(2)],
@@ -95,9 +126,33 @@ export function WeatherCard({ latitude, longitude }: Props) {
 
   return (
     <div>
-      <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <CloudSun className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Weather
-      </h4>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <CloudSun className="h-3.5 w-3.5 text-teal-600" aria-hidden /> Weather
+        </h4>
+        <div
+          role="group"
+          aria-label="Temperature unit"
+          className="flex items-center gap-0.5 rounded-md border border-border bg-card p-0.5"
+        >
+          {(["c", "f"] as const).map((u) => (
+            <button
+              key={u}
+              type="button"
+              onClick={() => setUnit(u)}
+              aria-pressed={unit === u}
+              className={
+                "rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none transition-colors " +
+                (unit === u
+                  ? "bg-teal-600 text-white"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {u === "c" ? "°C" : "°F"}
+            </button>
+          ))}
+        </div>
+      </div>
       <Row
         label="Conditions"
         value={
@@ -107,7 +162,7 @@ export function WeatherCard({ latitude, longitude }: Props) {
           </span>
         }
       />
-      <Row label="Temperature" value={temp(current.temperature)} />
+      <Row label="Temperature" value={temp(current.temperature, unit)} />
       <Row
         label="Wind"
         value={
@@ -132,9 +187,9 @@ export function WeatherCard({ latitude, longitude }: Props) {
         <Row
           label="Today"
           value={
-            temp(today.tMax) +
+            temp(today.tMax, unit) +
             " / " +
-            temp(today.tMin) +
+            temp(today.tMin, unit) +
             " · " +
             (today.rainProb == null ? "—" : today.rainProb + "%") +
             " rain"
@@ -156,10 +211,10 @@ export function WeatherCard({ latitude, longitude }: Props) {
               </span>
               <info.icon className="h-4 w-4 text-teal-600" aria-hidden />
               <span className="text-[10px] font-semibold tabular-nums text-foreground">
-                {day.tMax == null ? "—" : Math.round(day.tMax) + "°"}
+                {stripTemp(day.tMax, unit)}
               </span>
               <span className="text-[10px] tabular-nums text-muted-foreground">
-                {day.tMin == null ? "—" : Math.round(day.tMin) + "°"}
+                {stripTemp(day.tMin, unit)}
               </span>
             </div>
           );

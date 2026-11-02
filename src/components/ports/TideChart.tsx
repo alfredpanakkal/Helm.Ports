@@ -22,10 +22,18 @@ function clampMinutes(m: number): number {
   return Math.max(0, Math.min(1440, m));
 }
 
+/** Index of the segment [i, i+1] that contains `minutes` (works with gaps). */
+function segmentIndex(series: { minutes: number }[], minutes: number): number {
+  let i = 0;
+  // Advance while the next point still starts at or before `minutes`
+  while (i < series.length - 2 && series[i + 1].minutes <= minutes) i++;
+  return i;
+}
+
 function interpHeight(series: { minutes: number; height: number }[], minutes: number): number {
   if (series.length === 0) return 0;
   if (series.length === 1) return series[0].height;
-  const idx = Math.max(0, Math.min(series.length - 2, Math.floor(minutes / 60)));
+  const idx = segmentIndex(series, minutes);
   const a = series[idx];
   const b = series[idx + 1];
   const span = b.minutes - a.minutes || 1;
@@ -85,7 +93,7 @@ export function TideChart({ day, unit, isToday, nowMinutes }: Props) {
 
   let readout = "";
   if (scrubMin != null) {
-    const idx = Math.max(0, Math.min(series.length - 2, Math.floor(scrubMin / 60)));
+    const idx = segmentIndex(series, scrubMin);
     const rising = series[idx + 1].height >= series[idx].height;
     readout =
       fmtTime(scrubMin) +

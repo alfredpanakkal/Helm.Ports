@@ -10,7 +10,7 @@ import {
   fetchMarineWeather,
   type MarineWaveState,
 } from "@/lib/weather";
-import { describeWeather } from "./weatherCodes";
+import { describeWeather } from "@/lib/weatherCodes";
 
 type TempUnit = "c" | "f";
 

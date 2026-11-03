@@ -57,3 +57,25 @@ export const MAP_STYLE: StyleSpecification = {
     },
   ],
 };
+
+/**
+ * Port pin colours by size tier (t: 1 Major, 2 Small, 3 Minor, 4 Very
+ * Small / unclassified). Same moss ramp as the UI port-size badges
+ * (PORT_SIZE_STYLES); each pair is the WCAG-AA fill/text pair verified in
+ * src/lib/contrast.test.ts — the second colour is used as the pin ring
+ * (the badge text colour), and Very Small pins are outline-only, like
+ * their badge.
+ */
+export const PIN_COLORS_LIGHT: Record<number, [string, string]> = {
+  1: ["#2F6B4F", "#FFFFFF"], // Major — sidebar-primary + white
+  2: ["#A9D3BB", "#16301F"], // Small
+  3: ["#DDEFE0", "#2F6B4F"], // Minor — accent + accent-foreground, thin ring
+  4: ["rgba(0,0,0,0)", "#5D665F"], // Very Small — outline only, muted
+};
+
+export const PIN_COLORS_DARK: Record<number, [string, string]> = {
+  1: ["#8FCBA8", "#0E1210"], // Major
+  2: ["#2F5A44", "#E9EDE9"], // Small
+  3: ["#1C2A22", "#B7E2C9"], // Minor
+  4: ["rgba(0,0,0,0)", "#9FA69F"], // Very Small — outline only, muted
+};

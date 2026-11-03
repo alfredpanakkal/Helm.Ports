@@ -110,6 +110,11 @@ export function InfoSheet({
                   </a>
                 </p>
                 <p className="text-xs text-muted-foreground/70">Third Officer on ocean-going tankers · Full-Stack Developer</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground/70">
+                  Builds software for real-world problems — at sea and beyond:
+                  navigation, shipboard admin and everyday routines, made to
+                  work on the weak connections you often have at sea.
+                </p>
                 <p className="text-xs text-muted-foreground/70">India · K-Line</p>
               </div>
             </div>

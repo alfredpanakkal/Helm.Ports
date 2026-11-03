@@ -13,7 +13,14 @@ import { useTheme } from "@/components/theme-provider";
 import { ArrowLeft, List as ListIcon, Loader2, Waves } from "lucide-react";
 import type { CountryEntry } from "@/lib/ports";
 import { CountryList } from "./CountryList";
-import { MAP_STYLE, SEAMARK_MIN_ZOOM, PIN_COLORS_DARK, PIN_COLORS_LIGHT } from "./config";
+import {
+  COUNTRY_COLORS_DARK,
+  COUNTRY_COLORS_LIGHT,
+  MAP_STYLE,
+  PIN_COLORS_DARK,
+  PIN_COLORS_LIGHT,
+  SEAMARK_MIN_ZOOM,
+} from "./config";
 import {
   countriesFC,
   EMPTY_FC,
@@ -161,20 +168,12 @@ export function PortsMap({ onSelect }: Props) {
         type: "circle",
         source: "countries",
         paint: {
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["get", "count"],
-            1,
-            6,
-            50,
-            12,
-            300,
-            18,
-          ],
-          "circle-color": "#0b6ea8",
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#ffffff",
+          // One compact, uniform dot per country: the port count lives
+          // in the label, not the marker, so the world view scans evenly.
+          "circle-radius": 5,
+          "circle-color": COUNTRY_COLORS_LIGHT.dot[0],
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": COUNTRY_COLORS_LIGHT.dot[1],
         },
       });
       map.addLayer({
@@ -190,13 +189,15 @@ export function PortsMap({ onSelect }: Props) {
             ")",
           ],
           "text-size": 12,
-          "text-offset": [0, 1.2],
+          // Snug under the smaller dot (was 1.2 for the old
+          // count-scaled markers).
+          "text-offset": [0, 0.7],
           "text-anchor": "top",
           "text-font": ["Open Sans Regular"],
         },
         paint: {
-          "text-color": "#12263a",
-          "text-halo-color": "#ffffff",
+          "text-color": COUNTRY_COLORS_LIGHT.label[0],
+          "text-halo-color": COUNTRY_COLORS_LIGHT.label[1],
           "text-halo-width": 1.5,
         },
       });
@@ -384,10 +385,20 @@ export function PortsMap({ onSelect }: Props) {
     }
   }, [seamarks, mapReady]);
 
-  // Port pins follow the active theme: same moss tier ramp, dark palette.
+  // Map paint follows the active theme: port pins (moss tier ramp) and
+  // the world-view country dots/labels swap to the dark moss palette.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady || !map.getLayer("port-dots")) return;
+    const world = resolvedTheme === "dark" ? COUNTRY_COLORS_DARK : COUNTRY_COLORS_LIGHT;
+    if (map.getLayer("country-dots")) {
+      map.setPaintProperty("country-dots", "circle-color", world.dot[0]);
+      map.setPaintProperty("country-dots", "circle-stroke-color", world.dot[1]);
+    }
+    if (map.getLayer("country-labels")) {
+      map.setPaintProperty("country-labels", "text-color", world.label[0]);
+      map.setPaintProperty("country-labels", "text-halo-color", world.label[1]);
+    }
     const c = resolvedTheme === "dark" ? PIN_COLORS_DARK : PIN_COLORS_LIGHT;
     const fill = [
       "match",

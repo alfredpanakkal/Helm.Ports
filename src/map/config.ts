@@ -1,4 +1,4 @@
-successfully downloaded text file (SHA: 769e35e645b538b972a72d8433ac8575e1bdafa0)import type { StyleSpecification } from "maplibre-gl";
+import type { StyleSpecification } from "maplibre-gl";
 
 /**
  * Raster base tiles. The default OpenStreetMap server is fine for

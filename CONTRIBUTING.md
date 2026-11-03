@@ -87,7 +87,7 @@ fix(table): sort null channel depths to end on descending order
 ## 4. Code Quality Standards
 
 - **TypeScript Strictness**: Do not introduce `any` types. Provide comprehensive interface definitions in `src/components/ports/types.ts`.
-- **Zero-Regressions on In-Memory Speed**: Any API endpoint changes must execute in under 10ms for 5,410 records.
+- **Zero-Regressions on In-Memory Speed**: Any API endpoint changes must execute in under 10 ms across the full dataset (3,814 portsv2 records).
 - **Component Modularity**: Keep components focused. Complex filtering logic belongs in `src/lib/` or custom hooks, not inline within JSX.
 - **Accessibility (a11y)**: Ensure interactive elements have valid `aria-label` attributes and keyboard accessibility. Color contrast must match WCAG AA in both themes — use the moss semantic tokens from `src/index.css` (never hard-coded palette colours); `src/lib/contrast.test.ts` pins the accepted pairs (text >= 4.5:1, control fills >= 3:1) and must stay green.
 
@@ -95,5 +95,5 @@ fix(table): sort null channel depths to end on descending order
 
 ## 5. Security & Data Integrity
 
-- The primary dataset lives in `data/ports.json`. Any updates to the dataset must cite the source publication or revision date.
+- The primary dataset lives in `data/portsv2-117 field.json` (NGA Updated Pub 150; the legacy `data/ports.json` is the automatic fallback). Any updates to the dataset must cite the source publication or revision date.
 - Soundings and navigational data represent historical survey soundings. Never remove or alter the nautical disclaimer footer.

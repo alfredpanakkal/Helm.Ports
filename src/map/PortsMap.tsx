@@ -26,11 +26,12 @@ interface Props {
 }
 
 const COUNTRY_LAYERS = ["country-dots", "country-labels"];
-const PORT_LAYERS = ["port-clusters", "port-cluster-count", "port-dots"];
+const PORT_LAYERS = ["port-clusters", "port-cluster-count", "port-dots", "port-labels"];
 
 /**
  * MapLibre GL world map. World view shows one dot per port-having country;
- * clicking a country fits it and shows its ports (clustered); clicking a
+ * clicking a country fits it and shows its ports (clustered, with small
+ * name labels on unclustered dots); clicking a
  * port opens a popup with name, country, UN/LOCODE and local time, plus a
  * "More details" button that opens the existing PortDetailSheet.
  *
@@ -242,6 +243,31 @@ export function PortsMap({ onSelect }: Props) {
           "circle-color": "#0b6ea8",
           "circle-stroke-width": 1.5,
           "circle-stroke-color": "#ffffff",
+        },
+      });
+      // Small port-name labels on unclustered dots, so each port can be
+      // identified at a glance. MapLibre symbol collision detection
+      // declutters automatically; tier (t) as symbol-sort-key keeps major
+      // ports labelled when space is tight.
+      map.addLayer({
+        id: "port-labels",
+        type: "symbol",
+        source: "ports",
+        filter: ["!", ["has", "point_count"]],
+        layout: {
+          visibility: "none",
+          "text-field": ["get", "n"],
+          "text-size": 10.5,
+          "text-offset": [0, 0.85],
+          "text-anchor": "top",
+          "text-font": ["Open Sans Regular"],
+          "text-max-width": 8,
+          "symbol-sort-key": ["get", "t"],
+        },
+        paint: {
+          "text-color": "#12263a",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.5,
         },
       });
 

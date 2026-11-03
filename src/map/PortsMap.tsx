@@ -298,7 +298,27 @@ export function PortsMap({ onSelect }: Props) {
       // screens, and users naturally aim for the visible label too.
       const openPortPopup = (f: { properties: unknown; geometry: unknown } | undefined) => {
         if (!f) return;
-        const p = f.properties as unknown as PortPoint;
+        // MapLibre hands event-feature properties back through the tile
+        // pipeline, where values can arrive stringified depending on the
+        // path (maplibre-gl-js#1325). The old popup only ever concatenated
+        // properties into strings; this one calls .toFixed() on them, and
+        // a string there threw and silently killed every click. Coerce once.
+        const raw = f.properties as Partial<PortPoint>;
+        const p: PortPoint = {
+          i: Number(raw.i),
+          n: String(raw.n ?? ""),
+          c: String(raw.c ?? ""),
+          la: Number(raw.la),
+          lo: Number(raw.lo),
+          d: raw.d == null ? null : Number(raw.d),
+          t: Number(raw.t ?? 4),
+          u: raw.u == null ? null : String(raw.u),
+          s: raw.s == null ? null : String(raw.s),
+          v: raw.v == null ? null : String(raw.v),
+          dm: raw.dm == null ? null : Number(raw.dm),
+          m: raw.m == null ? null : Number(raw.m),
+          r: Number(raw.r ?? 0),
+        };
         const coords = (f.geometry as { coordinates: [number, number] }).coordinates;
         if (popupRef.current) popupRef.current.remove();
         // Zero-API single-glance summary: everything below comes from the
@@ -369,20 +389,35 @@ export function PortsMap({ onSelect }: Props) {
             onSelectRef.current(p.i);
           });
       };
-      map.on("click", "port-hit", (e) => openPortPopup(e.features?.[0]));
-      map.on("click", "port-labels", (e) => openPortPopup(e.features?.[0]));
-      map.on("mouseenter", "port-hit", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "port-hit", () => {
-        map.getCanvas().style.cursor = "";
-      });
-      map.on("mouseenter", "port-labels", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "port-labels", () => {
-        map.getCanvas().style.cursor = "";
-      });
+      // Clicks bind to the visible pin layer as well as the invisible
+      // port-hit target: a fully transparent layer is not reliably
+      // queryable on every MapLibre build, and port-dots is the layer
+      // clicks were proven to work on before PR #39. If popup building
+      // ever throws, fall back to opening the detail sheet so a click
+      // can never silently do nothing.
+      const showPortPopup = (
+        f: { properties: unknown; geometry: unknown } | undefined
+      ) => {
+        try {
+          openPortPopup(f);
+        } catch (err) {
+          console.error(
+            "Helm.Ports: port popup failed, opening detail sheet instead",
+            err
+          );
+          const id = Number((f?.properties as { i?: number } | undefined)?.i);
+          if (Number.isFinite(id)) onSelectRef.current(id);
+        }
+      };
+      for (const layer of ["port-dots", "port-hit", "port-labels"]) {
+        map.on("click", layer, (e) => showPortPopup(e.features?.[0]));
+        map.on("mouseenter", layer, () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", layer, () => {
+          map.getCanvas().style.cursor = "";
+        });
+      }
 
       map.on("zoomend", () => setZoom(map.getZoom()));
       setMapReady(true);

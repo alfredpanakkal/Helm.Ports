@@ -33,8 +33,12 @@ Helm.Ports is built as a unified, single-port full-stack web application. It com
          Loads & Caches Once                                  |  - FilterSidebar        |
                     v                                         |  - PortDetailSheet      |
        +-------------------------+                            +-------------------------+
-       |     data/ports.json     |
-       |   (5,410 Port Records)  |
+       | data/portsv2-117       |
+       | field.json — Updated   |
+       | Pub 150 export: 3,814  |
+       | records, 117 fields;   |
+       | (legacy data/ports.json|
+       | is the fallback)       |
        +-------------------------+
 ```
 
@@ -47,36 +51,44 @@ Helm.Ports is built as a unified, single-port full-stack web application. It com
 - **Rationale**: Eliminates Cross-Origin Resource Sharing (CORS) friction, simplifies deployment, preserves proxy-free client calls (`fetch('/api/ports')`), and runs natively within containerized preview environments.
 
 ### 2.2 In-Memory Data Engine vs. Relational/Document Database
-- **Decision**: Avoid an external database daemon (PostgreSQL, SQLite, MongoDB). The 5,410 port records (~3.27 MB uncompressed) are read from `data/ports.json` at process start and cached in V8 memory.
+- **Decision**: Avoid an external database daemon (PostgreSQL, SQLite, MongoDB). The port records are read at process start and cached in V8 memory: primary `data/portsv2-117 field.json` (Updated Pub 150, 3,814 records, 117 fields, ~13.4 MB), with the legacy `data/ports.json` (5,410 records, ~3.3 MB) as the automatic fallback.
 - **Rationale**:
-  - Entire dataset consumes less than 3 MB of heap memory.
+  - The parsed dataset stays comfortably in the V8 heap (tens of MB for portsv2's 117 fields; under 4 MB for the legacy file).
   - In-memory array filtering and multi-column sorting run in **1.2 ms to 3.5 ms**, faster than typical database network round-trips.
   - Zero external database setup, migrations, or connection pool maintenance.
 
 ### 2.3 Dual Map Renderers: MapLibre GL (default) + Legacy SVG
 - **Problem**: A tiled GL map depends on external tile services, while a self-contained SVG map offers no basemap context. Different deployments want both.
 - **Decision**: Ship two renderers behind the `VITE_USE_MAPLIBRE` switch in `App.tsx` (default: GL):
-  - **MapLibre GL** (`src/map/`): raster OpenStreetMap base tiles (env-swappable via `VITE_OSM_TILE_URL` for production metering), an optional OpenSeaMap seamarks overlay from zoom 6, port markers with clustering, and a country-level world view backed by the compact `GET /api/ports?format=countries` index.
+  - **MapLibre GL** (`src/map/`): raster OpenStreetMap base tiles (env-swappable via `VITE_OSM_TILE_URL` for production metering), an optional OpenSeaMap seamarks overlay from zoom 6, every port of a selected country drawn as an individual tier-coloured pin (moss port-size ramp, no clustering) with a decluttered name label, a country-level world view of compact uniform country markers backed by the compact `GET /api/ports?format=countries` index (the selection is shareable via `?country=` in the URL, and back/Escape return to the world view), and a zero-API single-glance popup on pin or label click.
   - **Legacy equirectangular SVG** (`PortMap.tsx`): Natural Earth coastlines from `public/land.json` — zero tile services, no API keys, fully offline-capable.
 - **LOD & compact payload (SVG renderer)**:
   - The server exposes `/api/ports?format=points`, returning an array of compact tuples:
     ```ts
     interface MapPoint {
-      i: number;      // wpi_port_id (e.g. 31140)
-      n: string;      // wpi_port_name (e.g. "ROTTERDAM")
-      c: string;      // country (e.g. "Netherlands")
-      la: number;     // latitude (51.9)
-      lo: number;     // longitude (4.48)
+      i: number;        // wpi_port_id (e.g. 31140)
+      n: string;        // wpi_port_name (e.g. "ROTTERDAM")
+      c: string;        // country (e.g. "Netherlands")
+      la: number;       // latitude (51.9)
+      lo: number;       // longitude (4.48)
       d: number | null; // channel_depth_max_m (34.7)
-      t: number;      // LOD Tier: 1 (Major) to 4 (Very Small)
+      t: number;        // LOD Tier: 1 (Large/Major) to 4 (Very Small)
+      u: string | null; // UN/LOCODE (popup identity badge)
+      s: string | null; // port_size (popup pill, moss ramp)
+      v: string | null; // max_vessel_size (popup pill)
+      dm: number | null; // channel_depth_min_m (popup channel range)
+      m: number | null;  // mean_tidal_range_m (popup "Tide:" line)
+      r: number;        // entrance-restriction bitmask (1 tide, 2 swell, 4 ice, 8 other)
     }
+    // u/s/v/dm/m/r were added for the zero-API single-glance popup
+    // (§2.8); the payload stays a compact fraction of the full dataset.
     ```
-  - Total payload drops from **3.3 MB to ~150 KB** (~45 KB gzipped).
+  - Total payload drops from the full dataset (**13.4 MB** portsv2 / 3.3 MB legacy) to ~150 KB (~45 KB gzipped).
   - Client map dynamically mounts dot tiers based on current zoom scale $k$:
-    - $k \ge 1$: Tier 1 (Major ports, ~160 ports)
-    - $k \ge 2$: + Tier 2 (Small ports, ~1,137 ports)
-    - $k \ge 4$: + Tier 3 (Minor ports, ~1,499 ports)
-    - $k \ge 8$: + Tier 4 (Very Small & anchorages, 5,410 ports)
+    - $k \ge 1$: Tier 1 (Large / Major ports)
+    - $k \ge 2$: + Tier 2 (Small ports)
+    - $k \ge 4$: + Tier 3 (Medium / Minor ports)
+    - $k \ge 8$: + Tier 4 (Very Small, unknown & anchorages — every served port; the exact counts scale with the loaded file)
   - Viewport culling strips dots outside the visible map bounding box on every pan/zoom frame.
 
 ### 2.4 Self-Contained Vector Cartography (Zero Mapbox / Leaflet Tiles)
@@ -99,7 +111,11 @@ Helm.Ports is built as a unified, single-port full-stack web application. It com
 - **Fail-soft contract**: Outside model coverage (normal for inland ports) the proxies return 502 with an "unavailable for this location" message and the client hides the section. Failures are never cached.
 
 ### 2.7 Shared API App, Two Entry Points
-- **Decision**: Every route lives in `src/lib/apiApp.ts` (`buildApiApp()`), which builds an Express app with no listener and no static-file serving. `server.ts` mounts it locally (plus Vite middleware in dev or `dist` in production); `api/index.ts` exports it as the Vercel serverless function, with `vercel.json` rewriting `/api/*` and bundling the dataset into the function. One route table, zero drift between local and deployed.
+- **Decision**: Every route lives in `src/lib/apiApp.ts` (`buildApiApp()`), which builds an Express app with no listener and no static-file serving. `server.ts` mounts it locally (plus Vite middleware in dev or `dist` in production); `api/index.ts` exports it as the Vercel serverless function, with `vercel.json` rewriting `/api/*` and bundling the dataset into the function (`includeFiles` must be a single glob string — the Vercel builder ignores the array form). One route table, zero drift between local and deployed.
+
+### 2.8 Zero-API Single-Glance Port Popup (GL renderer)
+- **Decision**: Clicking a port pin — or its name label, or the invisible 16 px hit circle that surrounds every pin — opens an instant MapLibre popup with the essentials: name, country, UN/LOCODE (or WPI ID), live local time, port-size / vessel-size / entrance-restriction pills, and the channel-depth + tidal-range summary. A "More details" button opens the full `PortDetailSheet`. Everything renders in one frame with **zero network calls**: the fields ride the compact `format=points` payload (MapPoint keys `u`, `s`, `v`, `dm`, `m`, `r`) and local time comes from the bundled `@photostructure/tz-lookup` dataset via `src/map/localTime.ts` (synchronous, offline, `null`-safe — the popup hides the time row rather than showing a placeholder).
+- **Resilience**: popup HTML is built from defensively coerced feature properties (MapLibre can hand them back stringified through the tile pipeline — maplibre-gl-js#1325). Click handlers bind to all three pin layers (`port-dots`, `port-hit`, `port-labels`) and are re-bound whenever the visible layer is rebuilt; if popup construction ever throws, the click falls back to opening `PortDetailSheet` so a click can never silently do nothing.
 
 ---
 
@@ -205,19 +221,16 @@ When sorting by `channel_depth_max_m`, `mean_tidal_range_m`, or other physical d
 
 ### Invalid WPI ID rows (load-time guard)
 
-`data/ports.json` contains a small number of rows whose `wpi_port_id` is `0` or non-numeric - real places (e.g. Aalborg, DK and Jebel Ali, AE) that are missing both the port name and the WPI number in the source. They are not identifiable: they all alias on `GET /api/ports/0`, cannot be deep-linked, and carry no soundings. `getPorts()` therefore serves only records with a positive integer `wpi_port_id`, and `meta.record_count` (via `/api/stats`) reflects the served count rather than the raw file row count. When the source file is regenerated without these rows, the guard becomes a no-op; `src/lib/ports.test.ts` asserts the exclusion either way.
+The legacy source file contains a small number of rows whose `wpi_port_id` is `0` or non-numeric — real places (e.g. Aalborg, DK and Jebel Ali, AE) that are missing both the port name and the WPI number in the source. They are not identifiable: they all alias on `GET /api/ports/0`, cannot be deep-linked, and carry no soundings. `getPorts()` therefore serves only records with a positive integer `wpi_port_id`, and `meta.record_count` (via `/api/stats`) reflects the served count rather than the raw file row count. When the source file is regenerated without these rows, the guard becomes a no-op; `src/lib/ports.test.ts` asserts the exclusion either way.
 
-### Sounding units (feet-quantized)
+### Sounding precision & single soundings (portsv2)
 
-The NGA World Port Index records depths in whole feet; the `_m` fields are those values converted to metres and rounded to 0.1 m (e.g. 114 ft = 34.7 m). Two consequences:
-
-- Metre display carries false precision (the source resolution is 1 ft / 0.3 m); a feet display renders the source values exactly. Keep this in mind for any unit toggle.
-- `src/lib/ports.test.ts` asserts the quantization invariant for every served sounding: `v / 0.3048` must be within 0.35 ft of an integer. A violation means the conversion pipeline changed and must be reviewed before shipping.
+The Updated Pub 150 export records depths as native metre values quantized to 0.1 m, and **one sounding per facility** (`min === max`; a source `0` means *no data* and is stored as `null`). The legacy 2019 `ports.json` was feet-derived and also rounded to 0.1 m (e.g. 114 ft = 34.7 m), so the same invariants hold for both files. `src/lib/ports.test.ts` asserts for every served sounding: quantization to 0.1 m, and `min <= max` per facility pair. A violation means the conversion pipeline changed and must be reviewed before shipping.
 
 ### UN/LOCODE
 
-`scripts/join-unlocode.ts` (`npm run data:unlocode`) joins UNECE UN/LOCODEs onto `data/ports.json`. The join has not yet been run on the committed file, so `unlocode` is `null` for every record; the API and UI treat null as "not recorded". The join is idempotent and only touches the `unlocode` field.
+The Updated Pub 150 export carries UN/LOCODE natively (`un_locode`, stored in the raw spaced form "AU CCU"); `normalizePort` in `src/lib/ports.ts` compacts it into the legacy `unlocode` key at load time and drops malformed codes. `src/lib/ports.test.ts` asserts the `^[A-Z]{2}[A-Z0-9]{3}$` contract for every served record. `scripts/join-unlocode.ts` (`npm run data:unlocode`) remains the joiner for the legacy `data/ports.json` fallback — it joins the UNECE code list by normalized country + port name, honours manual fixes in `data/unlocode-overrides.json` (which win over automatic matches and survive re-runs), and reports unmatched ports to `data/unmatched-unlocode.csv`. The join is idempotent and only touches the `unlocode` field.
 
 ### Provenance
 
-`GET /api/stats` returns `meta` from the data file (`schema_version`, `record_count`, `last_updated`, `source`). `last_updated` is the dataset refresh date; `source` names the edition ("NGA Publication 150 - World Port Index, 2019 edition"). UI surfaces should print these verbatim from the API rather than hardcoding counts.
+`GET /api/stats` returns `meta` from the data file (`schema_version`, `record_count`, `last_updated`, `source`). `last_updated` is the dataset refresh date; When present, `source` names the edition (legacy file: "NGA Publication 150 - World Port Index, 2019 edition"; the portsv2 metadata block centers on its data dictionary and may omit `last_updated`/`source`, while `record_count` always reflects the served records). UI surfaces should print these verbatim from the API rather than hardcoding counts.

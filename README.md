@@ -57,6 +57,7 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 - Optional OpenSeaMap seamarks overlay, shown from zoom 6+
 - A country-level world view backed by the compact `GET /api/ports?format=countries` index — selecting a country reveals all of its ports as individual pins, no clustering
 - Pins use the moss port-size ramp — Large/Major, Small, Medium/Minor, and outline-only Very Small — matching the table badges, with a small name label per pin (major ports prioritized when space is tight), decluttered automatically as you zoom
+- **Zero-API single-glance popup** — click any pin, its name label, or the invisible touch-friendly hit circle around it for name, country, UN/LOCODE, live local time (bundled offline time-zone lookup, no API call), port-size / vessel-size / restriction pills and the channel-depth + tide summary; a "More details" button opens the full detail sheet
 
 **Legacy SVG fallback** (`VITE_USE_MAPLIBRE=false`): self-contained Natural Earth cartography with zoom-based level-of-detail — no tiles, no keys, fully offline-capable:
 
@@ -82,6 +83,7 @@ Viewport culling and selected-port highlighting run on every pan/zoom frame (SVG
 - Slide-over detail sheet with all soundings: channel, anchorage, cargo pier, oil terminal
 - Country flag beside the country name in the detail sheet (key-free flagcdn.com images)
 - Restriction badges and tidal-range display
+- "Full NGA Pub 150 record" section — every source field of the 117-field dataset (facilities, services, even the WKT geometry), passed through verbatim
 
 </details>
 
@@ -229,6 +231,7 @@ Common query parameters:
 ├── api/index.ts                 # Vercel serverless entry (reuses buildApiApp)
 ├── data/portsv2-117 field.json   # NGA Updated Pub 150 (3,814 records, 117 fields)
 ├── data/ports.json               # Legacy 2019 dataset (automatic fallback)
+├── data/unlocode-overrides.json   # Manual UN/LOCODE fixes (legacy join script)
 ├── docs/architecture.md          # Full system design deep-dive
 ├── public/
 │   ├── land.json                 # Natural Earth coastline vectors (SVG map)
@@ -239,7 +242,8 @@ Common query parameters:
 │   │                              # PortMap (legacy SVG) + astronomy/weather/
 │   │                              # tide/timezone cards + shared types
 │   ├── components/ui/             # Accessible UI primitives
-│   ├── map/                       # MapLibre GL renderer (PortsMap, CountryList, config)
+│   ├── map/                       # MapLibre GL renderer (PortsMap, CountryList, config,
+│   │                              # localTime bundled tz lookup + geo helpers)
 │   ├── lib/                       # ports.ts data layer, apiApp.ts Express API,
 │   │                              # astronomy/tides/weather/timezone proxies + tests
 │   └── App.tsx

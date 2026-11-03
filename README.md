@@ -284,6 +284,14 @@ See [TODO.md](TODO.md) for the full backlog.
 
 Alfred is a Third Officer on ocean-going tankers and a full-stack developer. He builds software for real-world problems — at sea and beyond — including web apps for navigation, shipboard admin and everyday routines, designed to stay usable on the weak connections you often have at sea.
 
+| Area | Details |
+|------|---------|
+| Focus | Offline-first, low-bandwidth design · geospatial interfaces (Leaflet, PostGIS, custom SVG maps) · data traceability (verbatim source text, checksums, audit logs) |
+| Stack | TypeScript · React · Vite · Node.js / Express · Python · Supabase · Firebase |
+| Maritime | Navigational watchkeeping · ECDIS · Radar / ARPA · GMDSS · Tanker cargo & safety |
+
+He also built the rest of the Helm family of maritime tools — **Helm.Warning** (NAVAREA navigational-warning pipeline), **Helm Almanac** (celestial almanac & star chart), **Helm Productivity**, **Bond Vault** (shipboard bond-store ledger), **Seatime & NRI Calculator** and **Mudhra Converter** — full case studies on the portfolio.
+
 [![Portfolio](https://img.shields.io/badge/Portfolio-alfred--panakkal-2F6B4F?style=flat-square)](https://alfred-panakkal.vercel.app)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-in%2Falfredpanakkal-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alfredpanakkal/)
 [![GitHub](https://img.shields.io/badge/GitHub-@alfredpanakkal-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/alfredpanakkal)

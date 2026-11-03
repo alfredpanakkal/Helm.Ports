@@ -9,8 +9,8 @@ Welcome, AI Agent. This document defines the engineering standards, architecture
 Helm.Ports is a specialized maritime data explorer that visualizes and queries **3,814 worldwide maritime ports** from the NGA World Port Index (Updated Pub 150 export).
 
 ### Primary Goals:
-- **Zero-lag queries**: All searching, filtering, and sorting across 5,410 records must stay sub-5ms in-memory on the backend.
-- **Lightweight map payloads**: The SVG map must never receive the full 3.3 MB dataset. It must consume the compact `/api/ports?format=points` payload (~150 KB).
+- **Zero-lag queries**: All searching, filtering, and sorting across the 3,814 portsv2 records must stay sub-5ms in-memory on the backend.
+- **Lightweight map payloads**: The maps must never receive the full dataset (13.4 MB portsv2; 3.3 MB legacy). They consume the compact `/api/ports?format=points` payload (~150 KB) or the `?format=countries` index.
 - **Single-port full-stack execution**: Dev server and API run together on port 3000 via `server.ts` mounting `vite.middlewares`.
 - **Absolute stability**: Type-safe code (`tsc --noEmit`), resilient null handling for missing hydrographic soundings, and smooth UI performance without layout shifts.
 
@@ -26,6 +26,7 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 | **Primitives** | Radix UI | `@radix-ui/react-dialog`, `@radix-ui/react-select`, `@radix-ui/react-slider`, `@radix-ui/react-checkbox`, `@radix-ui/react-tabs`, `@radix-ui/react-scroll-area`, `@radix-ui/react-separator`, `@radix-ui/react-slot`, `@radix-ui/react-label` |
 | **CSS Utilities** | Tailwind CSS v4 + OKLCH colors | `clsx`, `tailwind-merge`, `class-variance-authority`, `tw-animate-css` |
 | **Data Storage** | Static JSON | `data/portsv2-117 field.json` (13.4 MB, 3,814 records, 117 fields); legacy `data/ports.json` kept as automatic fallback |
+| **Offline tz lookup** | @photostructure/tz-lookup (bundled IANA zones) | `src/map/localTime.ts` — zero-API local-time labels for map popups |
 | **Map Rendering** | MapLibre GL (default) + equirectangular SVG fallback (`VITE_USE_MAPLIBRE`) | `maplibre-gl`, `src/map/config.ts`, `public/land.json` |
 
 ---
@@ -37,6 +38,8 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 │   └── index.ts                  # Vercel serverless entry — reuses buildApiApp(), no listener
 ├── data/
 │   ├── portsv2-117 field.json     # Primary database (Updated Pub 150, 117 fields): loaded ONCE at module scope
+│   ├── a1195213-790e-4171-b70d-44ed42f827f0.csv  # Raw Updated Pub 150 CSV export (verbatim source)
+│   ├── unlocode-overrides.json    # Manual UN/LOCODE fixes for the legacy join script
 │   └── ports.json                 # Legacy 2019 backup; automatic fallback when portsv2 is absent
 ├── docs/
 │   └── architecture.md            # Detailed system design & data flow documentation
@@ -44,7 +47,7 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 │   ├── land.json                  # World coastline SVG paths (1000x500 viewBox)
 │   └── logo.svg                   # Nautical brand logo
 ├── scripts/
-│   └── join-unlocode.ts           # Idempotent UN/LOCODE join onto ports.json
+│   └── join-unlocode.ts           # Legacy only: idempotent UN/LOCODE join onto ports.json (portsv2 ships un_locode natively)
 ├── src/
 │   ├── components/
 │   │   ├── InfoSheet.tsx          # About / credits slide-over
@@ -78,6 +81,7 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 │   ├── map/
 │   │   ├── PortsMap.tsx           # MapLibre GL map (DEFAULT renderer)
 │   │   ├── CountryList.tsx        # Country-level world view
+│   │   ├── localTime.ts           # Zero-API local-time labels (bundled @photostructure/tz-lookup)
 │   │   ├── config.ts              # Map style, tile sources, glyphs, env switches
 │   │   └── geo.ts                 # Geo helpers for the GL map
 │   ├── App.tsx                    # Main orchestrator component
@@ -144,14 +148,16 @@ If dev server state needs refreshing after server or dependency changes:
 ## 6. Things Agents MUST ALWAYS DO
 
 - **Always maintain the single-server model**: All backend logic must remain in `server.ts` or imported helper modules in `src/lib/`. Express handles `/api/*` first, then hands off remaining routes to Vite.
-- **Always preserve in-memory caching**: When querying `data/ports.json`, call `getPorts()` in `src/lib/ports.ts`. It loads and parses the file once into memory and returns the cached array. Never parse `ports.json` on every HTTP request.
-- **Always keep the map payload compact**: When adding new fields to the map, keep them in `format=points` as single-letter or abbreviated keys (e.g., `i`, `n`, `c`, `la`, `lo`, `d`, `t`) to preserve the ~150 KB payload size.
+- **Always preserve in-memory caching**: When querying the port database (`data/portsv2-117 field.json`, legacy `data/ports.json` fallback), call `getPorts()` in `src/lib/ports.ts`. It loads and parses the file once into memory and returns the cached array. Never parse the data file on every HTTP request.
+- **Always keep the map payload compact**: When adding new fields to the map, keep them in `format=points` as single-letter or abbreviated keys (e.g., `i`, `n`, `c`, `la`, `lo`, `d`, `t`, plus the popup fields `u`, `s`, `v`, `dm`, `m`, `r`) to preserve the ~150 KB payload size.
 - **Always keep nulls at the end when sorting**: When sorting ports by depth or tidal range, null values must sort to the end of the list in both ascending and descending directions.
 - **Always route astronomy data through the server proxy**: Sun/moon transit data comes from `GET /api/astronomy` (backed by `src/lib/astronomy.ts`, which proxies SunriseSunset.io and caches success responses for 12 h, keyed on 2-decimal coordinates). Never call `api.sunrisesunset.io` from the browser; never cache failed responses (a transient upstream error must not block a port for 12 h).
 - **Always support both Light and Dark themes**: Use Tailwind semantic classes so elements contrast properly in both themes. Map oceans, land masses, and borders have explicit light and dark variations.
 - **Always keep the pre-paint theme script and `color-scheme` declaration**: The inline script in `index.html` applies the saved/system theme before first paint (no light-to-dark flash), and `color-scheme: light`/`dark` in `src/index.css` stops mobile browsers (Android auto-dark, Edge forced dark) from applying their own fading filter. Removing either re-introduces the faded-app bug on mobile.
 - **Always keep decorative masks on their own layer**: `.hero-grid` (and any masked decoration) must sit on its own absolutely-positioned, `pointer-events-none` element behind the content — never on a content-bearing element. A CSS mask on a parent fades everything inside it.
 - **Always keep the MapLibre GL map as the default renderer** and the legacy SVG map (`PortMap.tsx`) functional behind `VITE_USE_MAPLIBRE=false`. The switch lives in `App.tsx`; both consume the same `/api/ports` payloads.
+- **Always keep map popups zero-API**: the GL port popup renders entirely from the `format=points` payload plus the bundled `@photostructure/tz-lookup` dataset (`src/map/localTime.ts`) — never add a per-popup network call; deeper data comes from the existing detail sheet.
+- **Always keep the GL country view URL-addressable**: the selected country is reflected in the URL (`?country=<ISO2 or name>`), restored on load, and cleared by browser-back/Escape. Preserve this contract in `selectCountry`.
 - **Always route new endpoints through `buildApiApp()` in `src/lib/apiApp.ts`**: it is shared verbatim by `server.ts` (local/self-host) and `api/index.ts` (Vercel serverless). Never duplicate routes in an entry point.
 
 ---
@@ -160,7 +166,7 @@ If dev server state needs refreshing after server or dependency changes:
 
 - **NEVER install Next.js packages**: This is a standalone React 19 + Vite app. Do not import `next/router`, `next/navigation`, `next/image`, `next/server`, or `next-themes`.
 - **NEVER mount Express inside `vite.config.ts`**: Express is the outer wrapper in `server.ts`, which mounts `vite.middlewares`. Do not invert this relationship.
-- **NEVER send `ports.json` directly to the client browser**: Loading 3.3 MB of raw JSON on client bootstrap causes network and memory bloat. Query via `/api/ports` and `/api/stats`.
+- **NEVER send the port database files directly to the client browser**: portsv2 is ~13.4 MB (legacy `ports.json` 3.3 MB) — loading them on client bootstrap causes network and memory bloat. Query via `/api/ports` and `/api/stats`.
 - **NEVER use browser `window.alert()` or `window.confirm()`**: The app runs in an embedded iframe. Use Radix UI dialogs, sheets, or non-blocking feedback.
 - **NEVER rename `metadata.json`**: The app name inside `metadata.json` was set on turn 1. Keep `metadata.json` intact.
 - **NEVER import uninstalled Radix packages**: Before using a new UI component from shadcn, verify the underlying Radix package is installed in `package.json`.
@@ -174,14 +180,16 @@ If dev server state needs refreshing after server or dependency changes:
 | Pitfall | Root Cause | Solution |
 |---|---|---|
 | **Port ID Lookup in Detail Sheet** | `selected` can be either a full `Port` object (from table click) or a numeric `portId` (from map click). | In `PortDetailSheet.tsx`, extract `portId = typeof port === 'number' ? port : port?.wpi_port_id`, and enable query only when `portId != null`. |
-| **Map Dots Overcrowding** | 5,410 dots at zoom 1x would create an unreadable blob. | The Level of Detail (LOD) filter displays Tier 1 (Major) at scale 1x, Tier 2 at 2x, Tier 3 at 4x, Tier 4 at 8x. Maintain this behavior. |
+| **Map Dots Overcrowding** | 3,814 dots (portsv2; 5,410 in the legacy file) drawn at once would create an unreadable blob. | The SVG renderer's Level of Detail (LOD) filter displays Tier 1 (Major) at scale 1x, Tier 2 at 2x, Tier 3 at 4x, Tier 4 at 8x — maintain this. The GL renderer is country-first: it only ever draws one country's ports. |
 | **Equirectangular Projection Bounds** | Longitude ranges [-180, 180] and Latitude [-90, 90]. | `project(lon, lat)` maps to `x = ((lon + 180)/360) * 1000` and `y = ((90 - lat)/180) * 500`. Do not modify viewBox dimensions `1000 x 500` without updating `public/land.json`. |
-| **Missing Channel Sounding Data** | ~2,278 ports do not record a channel depth. | Map dots without depth must use `--dot-none` (`#94a3b8` light, `#475569` dark). Never default missing depths to `0m`. |
+| **Missing Channel Sounding Data** | Many ports (a large share of the dataset) do not record a channel depth. | Map dots without depth must use `--dot-none` (`#94a3b8` light, `#475569` dark). Never default missing depths to `0m`. |
 | **Country Name Divergence** | WPI data has legacy abbreviations (e.g. `U.S.A.`, `Congo, D.R.`). | Use `COUNTRY_FIXES` in `src/lib/ports.ts` so filter dropdowns match normalized country names. |
 | **Nullable Moon Rise/Set** | SunriseSunset.io omits `moonrise`/`moonset` on days the moon stays up/down. | Type them `string \| null` (as in `src/lib/astronomy.ts`) and render `—` when null. Never treat missing as "12:00 AM". |
 | **Faded hero on mobile** | The `.hero-grid` CSS mask was once applied to the whole hero `<section>`, fading the heading, search box and stat cards. | Keep the grid on its own masked, `pointer-events-none` layer (`<div className="hero-grid ..."/>`); the content wrapper sits above it with `relative`. |
 | **Mobile browsers re-darken / fade the app** | Android Chrome auto-dark and Edge forced-dark apply their own filter to pages that do not declare dark-awareness. | `color-scheme` is declared per theme in `src/index.css` plus `<meta name="color-scheme">` in `index.html`. Do not remove them. |
 | **Weather/marine 502 for inland ports** | Open-Meteo wave/sea models only cover the sea. | 502 with "unavailable for this location" is the designed response; clients hide the section. Do not convert it to 500 and do not cache failures. |
+| **GL popup clicks silently fail** | MapLibre can hand event-feature properties back stringified (maplibre-gl-js#1325); `.toFixed()` on a string throws and the click dies. | Coerce properties once (`Number()`/`String()`) before building the popup; bind clicks to `port-dots`, the invisible 16 px `port-hit` layer AND `port-labels`; wrap popup building in try/catch and fall back to opening the detail sheet. |
+| **GL world view shows no ports** | The GL map is country-first: pins render only after selecting a country. | By design — never render all ports at world zoom on the GL map; only the legacy SVG renderer draws everything, gated by LOD tiers. |
 | **portsv2 single soundings** | The Updated Pub 150 export records one depth per facility (min === max); 0 in the source means "no data" (stored as null). | `formatRange` collapses min === max to a single value. Never default a missing depth to 0 m. |
 | **port_size label sets differ per file** | portsv2 carries the raw Harbor Size labels ("Very Small"/"Small"/"Medium"/"Large"); legacy ports.json used "Major"/"Minor". | `PORT_SIZE_STYLES`, `PORT_SIZE_ORDER` and `PORT_SIZE_TIER` cover both sets. Keep the legacy entries — ports.json is the fallback file. |
 | **wpi_port_id is not unique in portsv2** | IDs 400, 9510, 49454 and 49460 each appear twice. | `GET /api/ports/:id` returns the first match; identify a port by id + name + coordinates. |

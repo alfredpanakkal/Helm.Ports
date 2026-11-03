@@ -30,6 +30,7 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 | **Dual world map** | MapLibre GL on OpenStreetMap tiles by default; legacy self-contained SVG renderer with ~150 KB points payload — zero tile services, offline-capable |
 | **Navigational screening** | Channel depth, tidal range, vessel size & entrance restrictions at a glance |
 | **Live conditions per port** | Weather, sea state, tides and local time via key-free Open-Meteo proxies |
+| **Zero-API map popups** | Single-glance popup per pin — local time, pills and a hydro summary from the points payload + bundled tz data, no extra calls |
 | **Modern UX** | Dark/light/system themes, mobile drawer, instant detail sheets, null-safe sorting |
 | **Solar & lunar transits** | Per-port Merpas, twilight and moon data, cached 12 h — no API keys |
 
@@ -57,6 +58,8 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 - Optional OpenSeaMap seamarks overlay, shown from zoom 6+
 - A country-level world view backed by the compact `GET /api/ports?format=countries` index — selecting a country reveals all of its ports as individual pins, no clustering
 - Pins use the moss port-size ramp — Large/Major, Small, Medium/Minor, and outline-only Very Small — matching the table badges, with a small name label per pin (major ports prioritized when space is tight), decluttered automatically as you zoom
+- Clicking a pin — or its invisible 16 px touch target / name label — opens a **zero-API single-glance popup**: UN/LOCODE or WPI number, local time via the bundled `@photostructure/tz-lookup` dataset (no network call), size / vessel / restriction pills, and a channel-depth + tide summary; *More details* opens the full detail sheet (a popup failure falls back to opening it directly)
+- The selected country is URL-addressable (`?country=<ISO2>` or name) — shareable country views restored on load; browser back and Escape return to the world view
 
 **Legacy SVG fallback** (`VITE_USE_MAPLIBRE=false`): self-contained Natural Earth cartography with zoom-based level-of-detail — no tiles, no keys, fully offline-capable:
 
@@ -102,12 +105,12 @@ Served by `GET /api/astronomy`, which proxies the free [SunriseSunset.io](https:
 <details>
 <summary>🌬️ Weather, Sea State & Tides (per port)</summary>
 
-The port detail sheet also shows live conditions for the port's coordinates — all proxied server-side (key-free) and CDN-cached:
+The port detail sheet also shows live conditions for the port's coordinates — proxied server-side and CDN-cached (weather, sea state and tides are key-free Open-Meteo calls; the DST calendar uses TimeZoneDB with a keyless Hourora fallback):
 
 - **Weather** — current conditions (temperature, wind in knots, pressure) plus a 7-day outlook, via `GET /api/weather` (Open-Meteo Forecast API)
 - **Sea state** — wave height / direction / period, swell and wind waves, via `GET /api/marine` (Open-Meteo Marine API); hidden automatically for inland ports outside wave-model coverage
 - **Tides** — hourly sea-level curve for the port, via `GET /api/tide` (Open-Meteo Marine API), rendered as an SVG chart
-- **Local time** — IANA time zone, current local time and DST calendar, via `GET /api/timezone`
+- **Local time** — IANA time zone, current local time and DST calendar, via `GET /api/timezone` (TimeZoneDB primary with a keyless Hourora fallback; the map popup's local time needs no API at all — it uses the bundled tz dataset)
 
 </details>
 <details>
@@ -229,11 +232,13 @@ Common query parameters:
 ├── api/index.ts                 # Vercel serverless entry (reuses buildApiApp)
 ├── data/portsv2-117 field.json   # NGA Updated Pub 150 (3,814 records, 117 fields)
 ├── data/ports.json               # Legacy 2019 dataset (automatic fallback)
+├── data/a1195213-790e-4171-b70d-44ed42f827f0.csv  # Raw Updated Pub 150 CSV export (verbatim source)
+├── data/unlocode-overrides.json  # Manual UN/LOCODE fixes for the legacy join script
 ├── docs/architecture.md          # Full system design deep-dive
 ├── public/
 │   ├── land.json                 # Natural Earth coastline vectors (SVG map)
 │   └── logo.svg                   # Nautical branding
-├── scripts/                      # Data pipeline (UN/LOCODE join)
+├── scripts/join-unlocode.ts     # Legacy UN/LOCODE join onto the 2019 fallback file
 ├── src/
 │   ├── components/ports/         # PortsTable, FilterSidebar, PortDetailSheet,
 │   │                              # PortMap (legacy SVG) + astronomy/weather/
@@ -254,7 +259,8 @@ Common query parameters:
 
 ## 📊 Data Source & Disclaimer
 
-- **Dataset:** NGA Publication 150 *World Port Index* (Updated Pub 150 CSV export, 2026), converted in-repo; the legacy 2019 dataset ([tayljordan/ports](https://github.com/tayljordan/ports)) is retained in `data/ports.json` as fallback
+- **Dataset:** NGA Publication 150 *World Port Index* (Updated Pub 150 CSV export, 2026), converted in-repo; the raw CSV export is kept in `data/` as the verbatim source, and the legacy 2019 dataset ([tayljordan/ports](https://github.com/tayljordan/ports)) is retained in `data/ports.json` as fallback
+- **UN/LOCODE:** portsv2 carries `un_locode` straight from the NGA export (normalized at load time); `scripts/join-unlocode.ts` remains available for the legacy 2019 fallback file
 - **Cartography:** Natural Earth admin-0 vectors (public domain)
 - **Astronomy:** [SunriseSunset.io](https://sunrisesunset.io) — daily sun/moon transit times per port (free API, no key, cached 12 h server-side)
 - **Weather, sea state & tides:** [Open-Meteo](https://open-meteo.com) Forecast + Marine APIs — key-free, proxied server-side with CDN caching

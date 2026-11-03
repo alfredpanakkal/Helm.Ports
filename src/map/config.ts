@@ -1,4 +1,4 @@
-import type { StyleSpecification } from "maplibre-gl";
+successfully downloaded text file (SHA: 769e35e645b538b972a72d8433ac8575e1bdafa0)import type { StyleSpecification } from "maplibre-gl";
 
 /**
  * Raster base tiles. The default OpenStreetMap server is fine for
@@ -78,4 +78,20 @@ export const PIN_COLORS_DARK: Record<number, [string, string]> = {
   2: ["#2F5A44", "#E9EDE9"], // Small
   3: ["#1C2A22", "#B7E2C9"], // Minor
   4: ["rgba(0,0,0,0)", "#9FA69F"], // Very Small — outline only, muted
+};
+
+/**
+ * World-view country marker + label colours (moss palette). dot = [fill,
+ * ring], label = [text, halo]. Replaces the pre-moss blue (#0b6ea8 fill,
+ * #12263a text) with the same tokens as the pin ramp, so dots and labels
+ * match the rest of the UI in both themes.
+ */
+export const COUNTRY_COLORS_LIGHT = {
+  dot: ["#2F6B4F", "#FFFFFF"], // sidebar-primary + white ring
+  label: ["#1D211E", "#FFFFFF"], // foreground on a white halo
+};
+
+export const COUNTRY_COLORS_DARK = {
+  dot: ["#8FCBA8", "#0E1210"], // dark sidebar-primary + dark background ring
+  label: ["#E9EDE9", "#0E1210"], // dark foreground on a dark halo
 };

@@ -45,7 +45,8 @@ This document tracks planned features, enhancements, and technical debt items fo
 - [ ] Add Playwright browser test suite for pan/zoom interactions and filter drawer on mobile viewports.
 
 - [ ] **Moss harmonization follow-ups (deferred from the palette PR)**:
-  - Recolour the MapLibre layer paints in `src/map/config.ts` (blue `#0b6ea8` dots, amber clusters) to the moss palette.
+  - Done: port pins use the moss tier ramp, light + dark palettes in `src/map/config.ts` (amber clusters were removed with clustering entirely).
+  - Still open: recolour the world-view country dots / labels (`#0b6ea8` / `#12263a`) to the moss palette.
   - Replace the List/Map toggle pill gradient (hard-coded `from-[#DDEFE0] to-[#E9F6CE]` / dark equivalents) with semantic tokens.
   - Fix table column overflow on small screens and align the mobile/desktop explorer layout.
   - Re-token the legacy SVG map depth ramp (`depthColor()` in `src/components/ports/types.ts`).

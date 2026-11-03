@@ -9,10 +9,11 @@ import maplibregl, {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/components/theme-provider";
 import { ArrowLeft, List as ListIcon, Loader2, Waves } from "lucide-react";
 import type { CountryEntry } from "@/lib/ports";
 import { CountryList } from "./CountryList";
-import { MAP_STYLE, SEAMARK_MIN_ZOOM } from "./config";
+import { MAP_STYLE, SEAMARK_MIN_ZOOM, PIN_COLORS_DARK, PIN_COLORS_LIGHT } from "./config";
 import {
   countriesFC,
   EMPTY_FC,
@@ -26,11 +27,12 @@ interface Props {
 }
 
 const COUNTRY_LAYERS = ["country-dots", "country-labels"];
-const PORT_LAYERS = ["port-clusters", "port-cluster-count", "port-dots"];
+const PORT_LAYERS = ["port-dots", "port-labels"];
 
 /**
  * MapLibre GL world map. World view shows one dot per port-having country;
- * clicking a country fits it and shows its ports (clustered); clicking a
+ * clicking a country fits it and shows every port as an individual,
+ * tier-coloured pin (moss size ramp) with a small name label; clicking a
  * port opens a popup with name, country, UN/LOCODE and local time, plus a
  * "More details" button that opens the existing PortDetailSheet.
  *
@@ -46,6 +48,7 @@ export function PortsMap({ onSelect }: Props) {
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
   const restoredRef = useRef(false);
+  const { resolvedTheme } = useTheme();
 
   const [country, setCountry] = useState<string | null>(null);
   const [seamarks, setSeamarks] = useState(false);
@@ -145,12 +148,12 @@ export function PortsMap({ onSelect }: Props) {
 
     map.on("load", () => {
       map.addSource("countries", { type: "geojson", data: EMPTY_FC });
+      // No clustering: a selected country's ports (a few hundred at most)
+      // render as individual pins immediately, each carrying a small
+      // name label decluttered by symbol collision detection.
       map.addSource("ports", {
         type: "geojson",
         data: EMPTY_FC,
-        cluster: true,
-        clusterMaxZoom: 9,
-        clusterRadius: 40,
       });
 
       map.addLayer({
@@ -197,51 +200,68 @@ export function PortsMap({ onSelect }: Props) {
           "text-halo-width": 1.5,
         },
       });
-      map.addLayer({
-        id: "port-clusters",
-        type: "circle",
-        source: "ports",
-        filter: ["has", "point_count"],
-        layout: { visibility: "none" },
-        paint: {
-          "circle-color": "#f59e0b",
-          "circle-radius": [
-            "step",
-            ["get", "point_count"],
-            14,
-            25,
-            18,
-            100,
-            24,
-          ],
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#ffffff",
-        },
-      });
-      map.addLayer({
-        id: "port-cluster-count",
-        type: "symbol",
-        source: "ports",
-        filter: ["has", "point_count"],
-        layout: {
-          visibility: "none",
-          "text-field": ["get", "point_count_abbreviated"],
-          "text-size": 12,
-          "text-font": ["Open Sans Regular"],
-        },
-        paint: { "text-color": "#ffffff" },
-      });
+      // Tier-coloured pins (t: 1 Major … 4 Very Small): the same moss
+      // ramp as the port-size badges. The badge text colour doubles as
+      // the pin ring; Very Small pins are outline-only. Palettes live in
+      // config.ts and are swapped on theme change (see effect below).
       map.addLayer({
         id: "port-dots",
         type: "circle",
         source: "ports",
-        filter: ["!", ["has", "point_count"]],
         layout: { visibility: "none" },
         paint: {
           "circle-radius": 6,
-          "circle-color": "#0b6ea8",
+          "circle-color": [
+            "match",
+            ["get", "t"],
+            1,
+            PIN_COLORS_LIGHT[1][0],
+            2,
+            PIN_COLORS_LIGHT[2][0],
+            3,
+            PIN_COLORS_LIGHT[3][0],
+            4,
+            PIN_COLORS_LIGHT[4][0],
+            PIN_COLORS_LIGHT[4][0],
+          ],
           "circle-stroke-width": 1.5,
-          "circle-stroke-color": "#ffffff",
+          "circle-stroke-color": [
+            "match",
+            ["get", "t"],
+            1,
+            PIN_COLORS_LIGHT[1][1],
+            2,
+            PIN_COLORS_LIGHT[2][1],
+            3,
+            PIN_COLORS_LIGHT[3][1],
+            4,
+            PIN_COLORS_LIGHT[4][1],
+            PIN_COLORS_LIGHT[4][1],
+          ],
+        },
+      });
+      // Small port-name labels so each port can be identified at a
+      // glance. MapLibre symbol collision detection declutters
+      // automatically; tier (t) as symbol-sort-key keeps major ports
+      // labelled when space is tight.
+      map.addLayer({
+        id: "port-labels",
+        type: "symbol",
+        source: "ports",
+        layout: {
+          visibility: "none",
+          "text-field": ["get", "n"],
+          "text-size": 10.5,
+          "text-offset": [0, 0.85],
+          "text-anchor": "top",
+          "text-font": ["Open Sans Regular"],
+          "text-max-width": 8,
+          "symbol-sort-key": ["get", "t"],
+        },
+        paint: {
+          "text-color": "#12263a",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.5,
         },
       });
 
@@ -253,29 +273,6 @@ export function PortsMap({ onSelect }: Props) {
         map.getCanvas().style.cursor = "pointer";
       });
       map.on("mouseleave", "country-dots", () => {
-        map.getCanvas().style.cursor = "";
-      });
-
-      map.on("click", "port-clusters", (e) => {
-        const f = map.queryRenderedFeatures(e.point, { layers: ["port-clusters"] })[0];
-        const src = map.getSource("ports");
-        if (!f || !src) return;
-        (src as GeoJSONSource)
-          .getClusterExpansionZoom(Number(f.properties?.cluster_id))
-          .then(
-            (z) => {
-              map.easeTo({
-                center: (f.geometry as { coordinates: [number, number] }).coordinates,
-                zoom: z,
-              });
-            },
-            () => {}
-          );
-      });
-      map.on("mouseenter", "port-clusters", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "port-clusters", () => {
         map.getCanvas().style.cursor = "";
       });
 
@@ -365,7 +362,7 @@ export function PortsMap({ onSelect }: Props) {
     if (entry) selectCountry(entry.name, false);
   }, [mapReady, countriesQuery.data, selectCountry]);
 
-  // Ports of the selected country -> clustered source.
+  // Ports of the selected country -> source.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -386,6 +383,33 @@ export function PortsMap({ onSelect }: Props) {
       map.setLayoutProperty("seamark", "visibility", seamarks ? "visible" : "none");
     }
   }, [seamarks, mapReady]);
+
+  // Port pins follow the active theme: same moss tier ramp, dark palette.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !map.getLayer("port-dots")) return;
+    const c = resolvedTheme === "dark" ? PIN_COLORS_DARK : PIN_COLORS_LIGHT;
+    const fill = [
+      "match",
+      ["get", "t"],
+      1, c[1][0],
+      2, c[2][0],
+      3, c[3][0],
+      4, c[4][0],
+      c[4][0],
+    ];
+    const ring = [
+      "match",
+      ["get", "t"],
+      1, c[1][1],
+      2, c[2][1],
+      3, c[3][1],
+      4, c[4][1],
+      c[4][1],
+    ];
+    map.setPaintProperty("port-dots", "circle-color", fill);
+    map.setPaintProperty("port-dots", "circle-stroke-color", ring);
+  }, [mapReady, resolvedTheme]);
 
   // Escape returns to the world view.
   useEffect(() => {

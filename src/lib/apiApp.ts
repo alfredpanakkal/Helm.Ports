@@ -225,6 +225,18 @@ export function buildApiApp(): ReturnType<typeof express> {
           d: p.channel_depth_max_m,
           t: portTier(p.port_size),
           u: p.unlocode,
+          // Single-glance popup metrics: size, vessel size, depths,
+          // tide and a 4-bit restriction bitmask (1 tide, 2 swell,
+          // 4 ice, 8 other) so the popup needs no extra network call.
+          s: p.port_size,
+          v: p.max_vessel_size,
+          dm: p.channel_depth_min_m,
+          m: p.mean_tidal_range_m,
+          r:
+            (p.entrance_restriction_tide ? 1 : 0) |
+            (p.entrance_restriction_heavy_swell ? 2 : 0) |
+            (p.entrance_restriction_ice ? 4 : 0) |
+            (p.entrance_restriction_other ? 8 : 0),
         }));
         res.json({ total, points });
         return;

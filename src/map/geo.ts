@@ -26,7 +26,7 @@ export function portsFC(points: PortPoint[]): FeatureCollection {
     features: points.map((p) => ({
       type: "Feature",
       geometry: { type: "Point", coordinates: [p.lo, p.la] },
-      properties: { i: p.i, n: p.n, c: p.c, d: p.d, t: p.t, u: p.u },
+      properties: { i: p.i, n: p.n, c: p.c, d: p.d, t: p.t, u: p.u, s: p.s, v: p.v, dm: p.dm, m: p.m, r: p.r },
     })),
   };
 }

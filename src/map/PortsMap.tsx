@@ -11,6 +11,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { ArrowLeft, List as ListIcon, Loader2, Waves } from "lucide-react";
+import { formatDepth, formatRange, PORT_SIZE_STYLES } from "@/components/ports/types";
 import type { CountryEntry } from "@/lib/ports";
 import { CountryList } from "./CountryList";
 import {
@@ -28,13 +29,14 @@ import {
   portsFC,
   type PortPoint,
 } from "./geo";
+import { localTimeLabel } from "./localTime";
 
 interface Props {
   onSelect: (portId: number) => void;
 }
 
 const COUNTRY_LAYERS = ["country-dots", "country-labels"];
-const PORT_LAYERS = ["port-dots", "port-labels"];
+const PORT_LAYERS = ["port-hit", "port-dots", "port-labels"];
 
 /**
  * MapLibre GL world map. World view shows one dot per port-having country;
@@ -201,6 +203,19 @@ export function PortsMap({ onSelect }: Props) {
           "text-halo-width": 1.5,
         },
       });
+      // Invisible ~32px-wide click target under each pin (see the
+      // openPortPopup bindings below): the visible dots are small, and
+      // clicks/taps often land just off-centre or on the name label.
+      map.addLayer({
+        id: "port-hit",
+        type: "circle",
+        source: "ports",
+        layout: { visibility: "none" },
+        paint: {
+          "circle-radius": 16,
+          "circle-color": "rgba(0,0,0,0)",
+        },
+      });
       // Tier-coloured pins (t: 1 Major … 4 Very Small): the same moss
       // ramp as the port-size badges. The badge text colour doubles as
       // the pin ring; Very Small pins are outline-only. Palettes live in
@@ -277,20 +292,71 @@ export function PortsMap({ onSelect }: Props) {
         map.getCanvas().style.cursor = "";
       });
 
-      map.on("click", "port-dots", (e) => {
-        const f = e.features?.[0];
+      // Clicking anywhere on the generous invisible hit circle around a
+      // pin — or on the port's name label — opens the popup. The visible
+      // dots are only 12px across, too small to tap reliably on touch
+      // screens, and users naturally aim for the visible label too.
+      const openPortPopup = (f: { properties: unknown; geometry: unknown } | undefined) => {
         if (!f) return;
         const p = f.properties as unknown as PortPoint;
         const coords = (f.geometry as { coordinates: [number, number] }).coordinates;
         if (popupRef.current) popupRef.current.remove();
-        const popup = new maplibregl.Popup({ offset: 10, maxWidth: "260px" })
+        // Zero-API single-glance summary: everything below comes from the
+        // compact points payload plus the bundled tz lookup, so the card
+        // renders fully populated in one frame — no placeholders.
+        const time = localTimeLabel(p.la, p.lo);
+        const id = p.u ? escapeHtml(p.u) : "WPI #" + p.i;
+        const pills: string[] = [];
+        if (p.s && PORT_SIZE_STYLES[p.s]) {
+          pills.push(
+            '<span class="text-[11px] px-1.5 py-0.5 rounded-full font-medium ' +
+              PORT_SIZE_STYLES[p.s] +
+              '">' +
+              escapeHtml(p.s) +
+              " port</span>"
+          );
+        }
+        if (p.v) {
+          pills.push(
+            '<span class="capitalize border border-border text-foreground text-[11px] px-1.5 py-0.5 rounded-full font-medium">' +
+              escapeHtml(p.v) +
+              "</span>"
+          );
+        }
+        const restrictions: string[] = [];
+        if (p.r & 1) restrictions.push("Tide");
+        if (p.r & 2) restrictions.push("Swell");
+        if (p.r & 4) restrictions.push("Ice");
+        if (p.r & 8) restrictions.push("Other");
+        for (const restriction of restrictions.slice(0, 2)) {
+          pills.push(
+            '<span class="border-transparent bg-destructive text-white dark:bg-destructive/60 text-[11px] px-1.5 py-0.5 rounded-full font-medium">' +
+              escapeHtml(restriction) +
+              " restricted</span>"
+          );
+        }
+        if (restrictions.length > 2) {
+          pills.push(
+            '<span class="border-transparent bg-destructive text-white dark:bg-destructive/60 text-[11px] px-1.5 py-0.5 rounded-full font-medium">+' +
+              (restrictions.length - 2) +
+              "</span>"
+          );
+        }
+        const stats: string[] = [];
+        const channel = formatRange(p.dm, p.d);
+        if (channel !== "—") stats.push("Channel: " + channel);
+        if (p.m != null) stats.push("Tide: " + formatDepth(p.m));
+        const popup = new maplibregl.Popup({ offset: 10, maxWidth: "290px" })
           .setLngLat(coords)
           .setHTML(
             `<div class="p-1">
-              <strong class="block text-sm font-semibold text-foreground">${escapeHtml(p.n)}</strong>
-              <div class="text-xs text-muted-foreground">${escapeHtml(p.c)}</div>
-              <div class="mt-1 text-xs text-muted-foreground">UN/LOCODE: <span class="font-medium text-foreground">${p.u ? escapeHtml(p.u) : "—"}</span></div>
-              <div class="text-xs text-muted-foreground">Local time: <span id="pp-time" class="font-medium text-foreground">…</span></div>
+              <strong class="block text-sm font-semibold leading-tight text-foreground">${escapeHtml(p.n)}</strong>
+              <div class="text-xs text-muted-foreground">${escapeHtml(p.c)}
+                <span class="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[11px] font-medium text-foreground">${id}</span>
+              </div>
+              <div class="mt-1 text-xs text-muted-foreground">${time ? escapeHtml(time) + " · " : ""}${p.la.toFixed(2)}°, ${p.lo.toFixed(2)}°</div>
+              ${pills.length ? '<div class="mt-1.5 flex flex-wrap gap-1">' + pills.join("") + "</div>" : ""}
+              ${stats.length ? '<div class="mt-1.5 text-xs text-muted-foreground">' + stats.map(escapeHtml).join(" · ") + "</div>" : ""}
               <button id="pp-more" type="button" class="mt-2 w-full rounded-md bg-accent-foreground px-3 py-1.5 text-xs font-medium text-background hover:opacity-80">More details</button>
             </div>`
           )
@@ -302,29 +368,19 @@ export function PortsMap({ onSelect }: Props) {
           ?.addEventListener("click", () => {
             onSelectRef.current(p.i);
           });
-        const timeEl = popup.getElement().querySelector("#pp-time");
-        void (async () => {
-          if (!timeEl) return;
-          try {
-            const res = await fetch("/api/timezone?lat=" + p.la + "&lng=" + p.lo);
-            if (!res.ok) throw new Error("timezone fetch failed");
-            const tz = (await res.json()) as {
-              gmtOffsetSec: number;
-              abbreviation: string;
-            };
-            const local = new Date(Date.now() + tz.gmtOffsetSec * 1000);
-            timeEl.textContent =
-              local.toISOString().slice(11, 16) +
-              (tz.abbreviation ? " (" + tz.abbreviation + ")" : "");
-          } catch {
-            timeEl.textContent = "unavailable";
-          }
-        })();
-      });
-      map.on("mouseenter", "port-dots", () => {
+      };
+      map.on("click", "port-hit", (e) => openPortPopup(e.features?.[0]));
+      map.on("click", "port-labels", (e) => openPortPopup(e.features?.[0]));
+      map.on("mouseenter", "port-hit", () => {
         map.getCanvas().style.cursor = "pointer";
       });
-      map.on("mouseleave", "port-dots", () => {
+      map.on("mouseleave", "port-hit", () => {
+        map.getCanvas().style.cursor = "";
+      });
+      map.on("mouseenter", "port-labels", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "port-labels", () => {
         map.getCanvas().style.cursor = "";
       });
 

@@ -33,6 +33,11 @@ export interface MapPoint {
   d: number | null;
   t: number; // LOD tier 1-4 (from port_size)
   u: string | null; // UN/LOCODE (null until the join script has run)
+  s: string | null; // port_size, e.g. "Major" (null when unclassified)
+  v: string | null; // max_vessel_size, e.g. "medium vessels"
+  dm: number | null; // channel_depth_min_m (d is the max)
+  m: number | null; // mean_tidal_range_m
+  r: number; // entrance-restriction bitmask: 1 tide, 2 swell, 4 ice, 8 other
 }
 
 export interface Stats {

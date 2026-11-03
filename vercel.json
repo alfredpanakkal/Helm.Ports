@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "api/index.ts": {
-      "includeFiles": "data/ports.json"
+      "includeFiles": ["data/ports*.json"]
     }
   },
   "rewrites": [

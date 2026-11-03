@@ -37,6 +37,7 @@ export function matchesQuery(p: PortRecord, q: string): boolean {
     p.wpi_port_name.toLowerCase().includes(needle) ||
     p.country.toLowerCase().includes(needle) ||
     (p.state?.toLowerCase().includes(needle) ?? false) ||
+    (p.alternate_port_name?.toLowerCase().includes(needle) ?? false) ||
     (p.point_of_interest?.toLowerCase().includes(needle) ?? false) ||
     String(p.wpi_port_id).includes(needle)
   );

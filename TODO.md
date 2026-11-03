@@ -43,6 +43,8 @@ This document tracks planned features, enhancements, and technical debt items fo
 - [x] Add per-port Solar & Lunar transit panel (Merpas, nautical twilight, moon phase) via `GET /api/astronomy` with 12 h caching.
 - [x] Add automated unit tests with `node:test` covering `src/lib/ports.ts` filtering and sorting invariants. (Wired into `npm test`; `src/lib/contrast.test.ts` additionally pins WCAG AA pairs for the moss palette.)
 - [ ] Add Playwright browser test suite for pan/zoom interactions and filter drawer on mobile viewports.
+- [ ] Remove the unused `@google/genai` dependency (not imported anywhere in this repo — carried over in `package.json` / `bun.lock`).
+- [ ] Audit portsv2's native `un_locode` coverage and re-point `scripts/join-unlocode.ts` at portsv2 for unmatched ports (the join currently targets the legacy `data/ports.json` only).
 
 - [ ] **Moss harmonization follow-ups (deferred from the palette PR)**:
   - Done: port pins use the moss tier ramp, light + dark palettes in `src/map/config.ts` (amber clusters were removed with clustering entirely).

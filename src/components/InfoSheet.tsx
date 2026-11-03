@@ -83,8 +83,8 @@ export function InfoSheet({
           <Section title="About">
             <p className="text-sm leading-relaxed text-muted-foreground">
               Helm.Ports is an explorer for the world&rsquo;s maritime ports and
-              anchorages — over 5,400 entries across 209 countries and
-              territories — with channel depths, tidal ranges, entrance
+              anchorages — 3,814 entries from the NGA Updated Pub 150 export —
+              with channel depths, tidal ranges, entrance
               restrictions and vessel size capacities, plus live weather, sea
               state, tides, sun &amp; moon transit times and local time details
               on an OpenStreetMap-based chart view.
@@ -143,8 +143,8 @@ export function InfoSheet({
           <Section title="Credits">
             <ul className="space-y-2">
               <CreditRow>
-                Port data — NGA Publication 150, World Port Index (2019
-                edition), via the tayljordan/ports dataset (MIT).
+                Port data — NGA Updated Publication 150 (2026 export; 2019
+                edition legacy fallback), via the tayljordan/ports dataset (MIT).
               </CreditRow>
               <CreditRow>
                 Map tiles — &copy; OpenStreetMap contributors; seamarks —
@@ -152,7 +152,7 @@ export function InfoSheet({
               </CreditRow>
               <CreditRow>
                 Weather, marine &amp; tide forecasts — Open-Meteo; time zone
-                data — TimeZoneDB.
+                data — TimeZoneDB (keyless Hourora fallback).
               </CreditRow>
               <CreditRow>
                 Map engine — MapLibre GL JS. Built with React, Vite, Tailwind

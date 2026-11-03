@@ -237,8 +237,8 @@ function PortsExplorer() {
                 Every port. Every depth. One search.
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Search {stats ? stats.totalPorts.toLocaleString() : "5,410"} ports
-                and anchorages across {stats ? stats.totalCountries : "209"}{" "}
+                Search {stats ? stats.totalPorts.toLocaleString() : "thousands of"} ports
+                and anchorages across {stats ? stats.totalCountries : "hundreds of"}{" "}
                 countries and territories — with recorded depths, tidal ranges,
                 entrance restrictions, and vessel size capacities.
               </p>

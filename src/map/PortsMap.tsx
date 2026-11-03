@@ -36,7 +36,7 @@ interface Props {
 }
 
 const COUNTRY_LAYERS = ["country-dots", "country-labels"];
-const PORT_LAYERS = ["port-dots", "port-labels"];
+const PORT_LAYERS = ["port-hit", "port-dots", "port-labels"];
 
 /**
  * MapLibre GL world map. World view shows one dot per port-having country;
@@ -203,6 +203,19 @@ export function PortsMap({ onSelect }: Props) {
           "text-halo-width": 1.5,
         },
       });
+      // Invisible ~32px-wide click target under each pin (see the
+      // openPortPopup bindings below): the visible dots are small, and
+      // clicks/taps often land just off-centre or on the name label.
+      map.addLayer({
+        id: "port-hit",
+        type: "circle",
+        source: "ports",
+        layout: { visibility: "none" },
+        paint: {
+          "circle-radius": 16,
+          "circle-color": "rgba(0,0,0,0)",
+        },
+      });
       // Tier-coloured pins (t: 1 Major … 4 Very Small): the same moss
       // ramp as the port-size badges. The badge text colour doubles as
       // the pin ring; Very Small pins are outline-only. Palettes live in
@@ -279,8 +292,11 @@ export function PortsMap({ onSelect }: Props) {
         map.getCanvas().style.cursor = "";
       });
 
-      map.on("click", "port-dots", (e) => {
-        const f = e.features?.[0];
+      // Clicking anywhere on the generous invisible hit circle around a
+      // pin — or on the port's name label — opens the popup. The visible
+      // dots are only 12px across, too small to tap reliably on touch
+      // screens, and users naturally aim for the visible label too.
+      const openPortPopup = (f: { properties: unknown; geometry: unknown } | undefined) => {
         if (!f) return;
         const p = f.properties as unknown as PortPoint;
         const coords = (f.geometry as { coordinates: [number, number] }).coordinates;
@@ -352,11 +368,19 @@ export function PortsMap({ onSelect }: Props) {
           ?.addEventListener("click", () => {
             onSelectRef.current(p.i);
           });
-      });
-      map.on("mouseenter", "port-dots", () => {
+      };
+      map.on("click", "port-hit", (e) => openPortPopup(e.features?.[0]));
+      map.on("click", "port-labels", (e) => openPortPopup(e.features?.[0]));
+      map.on("mouseenter", "port-hit", () => {
         map.getCanvas().style.cursor = "pointer";
       });
-      map.on("mouseleave", "port-dots", () => {
+      map.on("mouseleave", "port-hit", () => {
+        map.getCanvas().style.cursor = "";
+      });
+      map.on("mouseenter", "port-labels", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "port-labels", () => {
         map.getCanvas().style.cursor = "";
       });
 

@@ -11,12 +11,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Anchor, Ruler, Waves } from "lucide-react";
+import { MapPin, Anchor, Ruler, Waves, Ship, ScrollText } from "lucide-react";
 import { AstronomyCard } from "./AstronomyCard";
 import { TimezoneCard } from "./TimezoneCard";
 import { WeatherCard } from "./WeatherCard";
 import { TideCard } from "./TideCard";
-import { formatRange, PORT_SIZE_STYLES, type Port } from "./types";
+import { formatDepth, formatRange, PORT_SIZE_STYLES, type Port } from "./types";
 import { getCountryIso2 } from "@/lib/countryCodes";
 
 interface Props {
@@ -35,6 +35,141 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+/** snake_case key -> readable label ("maximum_vessel_draft_m" -> "Maximum Vessel Draft (m)"). */
+const LABEL_TOKENS: Record<string, string> = {
+  m: "(m)",
+  iho: "IHO",
+  lng: "LNG",
+  vts: "VTS",
+  us: "US",
+  un: "UN",
+  oid: "OID",
+  navarea: "NAVAREA",
+  wpi: "WPI",
+  ro: "Ro-Ro",
+  plus: "+",
+};
+const LOWERCASE_TOKENS = new Set(["of", "or", "and"]);
+
+function prettifyKey(key: string): string {
+  return key
+    .split("_")
+    .filter(Boolean)
+    .map((t) =>
+      LOWERCASE_TOKENS.has(t)
+        ? t
+        : LABEL_TOKENS[t] ?? t.charAt(0).toUpperCase() + t.slice(1)
+    )
+    .join(" ")
+    .replace(/ S (\d)/g, " S-$1")
+    .replace("Ro-Ro Ro-Ro", "Ro-Ro")
+    .replace(" + Tons", "+ Tons")
+    .replace("UN LOCODE", "UN/LOCODE");
+}
+
+/** Grouping for the full-record view. First match wins; "Other" catches the rest. */
+const DETAIL_GROUPS: [string, RegExp][] = [
+  [
+    "Identification",
+    /^(wpi_port_id|wpi_port_name|main_port_name|alternate_port_name|world_port_index_number|un_locode|unlocode|country|country_code|region_name|state|oid|us_representative|navarea|first_port_of_entry|point_of_interest)$/,
+  ],
+  ["Location & Water Body", /^(latitude|longitude|geometry|world_water_body|iho_s_130_sea_area)$/],
+  ["Harbor", /^(port_size|harbor_size|harbor_type|harbor_use|shelter_afforded|good_holding_ground)$/],
+  ["Depths & Dimensions", /(depth|tidal_range|entrance_width|turning_area|overhead_limits)/],
+  ["Vessel Limits", /(vessel_length|vessel_draft|vessel_beam|vessel_size|offshore_maximum)/],
+  ["Entrance Restrictions", /entrance_restriction/],
+  ["Pilotage & Tugs", /^(pilotage|tugs)_/],
+  ["Facilities", /^facilities_/],
+  [
+    "Services & Repairs",
+    /^(services_|repairs|dry_dock|medical_facilities|degaussing|garbage_disposal|dirty_ballast_disposal|chemical_holding_tank_disposal)/,
+  ],
+  ["Supplies", /^supplies_/],
+  ["Communications", /^communications_/],
+  [
+    "Navigation, Safety & Charts",
+    /^(railway|port_security|vessel_traffic_service|estimated_time_of_arrival_message|search_and_rescue|traffic_separation_scheme|sailing_direction_or_publication|publication_link|.*nautical_chart|iho_s_|underkeel_clearance_management_system)$/,
+  ],
+  ["Cargo Handling", /^(lifts|cranes)_/],
+  ["Quarantine", /^quarantine_/],
+];
+
+const LEGACY_KEYS = new Set([
+  "wpi_port_id",
+  "wpi_port_name",
+  "state",
+  "country",
+  "latitude",
+  "longitude",
+  "channel_depth_min_m",
+  "channel_depth_max_m",
+  "anchorage_depth_min_m",
+  "anchorage_depth_max_m",
+  "cargo_pier_depth_min_m",
+  "cargo_pier_depth_max_m",
+  "oil_terminal_depth_min_m",
+  "oil_terminal_depth_max_m",
+  "mean_tidal_range_m",
+  "entrance_restriction_tide",
+  "entrance_restriction_heavy_swell",
+  "entrance_restriction_ice",
+  "entrance_restriction_other",
+  "max_vessel_size",
+  "point_of_interest",
+  "port_size",
+  "unlocode",
+]);
+
+function formatDetailValue(v: unknown): string {
+  if (v == null) return "—";
+  if (v === true) return "Yes";
+  if (v === false) return "No";
+  return String(v);
+}
+
+/** Every non-legacy key of the record, grouped, rendered under "Full record". */
+function FullRecordSection({ port }: { port: Port }) {
+  const extras = Object.entries(port).filter(([key]) => !LEGACY_KEYS.has(key));
+  if (extras.length === 0) return null;
+
+  const grouped = new Map<string, [string, string][]>();
+  for (const [key, value] of extras) {
+    const title =
+      DETAIL_GROUPS.find(([, pattern]) => pattern.test(key))?.[0] ?? "Other";
+    const list = grouped.get(title) ?? [];
+    list.push([prettifyKey(key), formatDetailValue(value)]);
+    grouped.set(title, list);
+  }
+
+  const orderedTitles = [
+    ...DETAIL_GROUPS.map(([title]) => title),
+    "Other",
+  ].filter((title) => grouped.has(title));
+
+  return (
+    <div>
+      <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <ScrollText className="h-3.5 w-3.5 text-accent-foreground" aria-hidden />{" "}
+        Full NGA Pub 150 record
+      </h4>
+      {orderedTitles.map((title) => (
+        <div key={title} className="mt-3 first:mt-0">
+          <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+            {title}
+          </p>
+          {(grouped.get(title) ?? []).map(([label, value]) => (
+            <Row
+              key={label}
+              label={label}
+              value={<span className="break-words">{value}</span>}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PortDetailBody({ port }: { port: Port }) {
   const restrictions: string[] = [];
   if (port.entrance_restriction_tide) restrictions.push("Tide");
@@ -43,6 +178,16 @@ function PortDetailBody({ port }: { port: Port }) {
   if (port.entrance_restriction_other) restrictions.push("Other");
 
   const iso2 = getCountryIso2(port.country)?.toLowerCase();
+  const locode = port.unlocode ?? port.un_locode;
+  const vesselHarborInfo =
+    locode != null ||
+    port.alternate_port_name != null ||
+    port.harbor_type != null ||
+    port.maximum_vessel_length_m != null ||
+    port.maximum_vessel_draft_m != null ||
+    port.maximum_vessel_beam_m != null ||
+    port.pilotage_compulsory != null ||
+    port.tugs_assistance != null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -104,6 +249,40 @@ function PortDetailBody({ port }: { port: Port }) {
         />
       </div>
 
+      {vesselHarborInfo && (
+        <div>
+          <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <Ship className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Vessel &amp; harbor
+          </h4>
+          {locode && <Row label="UN/LOCODE" value={locode} />}
+          {port.alternate_port_name && (
+            <Row label="Also known as" value={port.alternate_port_name} />
+          )}
+          {port.harbor_type && <Row label="Harbor type" value={port.harbor_type} />}
+          {port.maximum_vessel_length_m != null && (
+            <Row label="Max vessel LOA" value={formatDepth(port.maximum_vessel_length_m)} />
+          )}
+          {port.maximum_vessel_beam_m != null && (
+            <Row label="Max vessel beam" value={formatDepth(port.maximum_vessel_beam_m)} />
+          )}
+          {port.maximum_vessel_draft_m != null && (
+            <Row label="Max vessel draft" value={formatDepth(port.maximum_vessel_draft_m)} />
+          )}
+          {port.pilotage_compulsory != null && (
+            <Row
+              label="Pilotage"
+              value={port.pilotage_compulsory ? "Compulsory" : "Not compulsory"}
+            />
+          )}
+          {port.tugs_assistance != null && (
+            <Row
+              label="Tug assistance"
+              value={port.tugs_assistance ? "Available" : "Not available"}
+            />
+          )}
+        </div>
+      )}
+
       <div>
         <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <Ruler className="h-3.5 w-3.5 text-accent-foreground" aria-hidden /> Depths (meters)
@@ -148,19 +327,22 @@ function PortDetailBody({ port }: { port: Port }) {
 
       <TimezoneCard latitude={port.latitude} longitude={port.longitude} />
 
+      <FullRecordSection port={port} />
+
       <Separator />
 
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Data from the NGA Publication 150 World Port Index (2019 edition), served via the{" "}
+        Data from the NGA Publication 150 World Port Index (Updated Pub 150 export, 2026),
+        published by the{" "}
         <a
-          href="https://github.com/tayljordan/ports"
+          href="https://msi.nga.mil"
           target="_blank"
           rel="noreferrer"
           className="font-medium text-accent-foreground underline underline-offset-2 hover:opacity-80"
         >
-          tayljordan/ports
+          NGA Maritime Safety Information
         </a>{" "}
-        dataset. Depth values represent a single recorded sounding and do not account for shifting
+        portal. Depth values represent a single recorded sounding and do not account for shifting
         bottom conditions or dredging. Not a substitute for current nautical charts.
       </p>
     </div>

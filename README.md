@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <strong>Interactive exploration of 5,410 worldwide maritime ports & anchorages</strong><br>
-  Derived from the NGA Publication 150 <em>World Port Index</em> (2019 edition)
+  <strong>Interactive exploration of 3,814 worldwide maritime ports & anchorages</strong><br>
+  Derived from the NGA Publication 150 <em>World Port Index</em> (Updated Pub 150 export, 2026)
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
   <img alt="Express" src="https://img.shields.io/badge/Express-4-000000?style=flat-square&logo=express&logoColor=white">
   <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-v4-0EA5E9?style=flat-square&logo=tailwindcss&logoColor=white">
   <img alt="Query performance" src="https://img.shields.io/badge/queries-1–3.5_ms_in--memory-0D9488?style=flat-square">
-  <img alt="Dataset" src="https://img.shields.io/badge/data-NGA_WPI_2019-informational?style=flat-square">
+  <img alt="Dataset" src="https://img.shields.io/badge/data-NGA_WPI_150-informational?style=flat-square">
 </p>
 
 ---
@@ -26,7 +26,7 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 
 | Capability | Benefit |
 |------------|---------|
-| **In-memory query engine** | Filter, search & sort 5,410 records in 1–3.5 ms — no database |
+| **In-memory query engine** | Filter, search & sort 3,814 records in 1–3.5 ms — no database |
 | **Dual world map** | MapLibre GL on OpenStreetMap tiles by default; legacy self-contained SVG renderer with ~150 KB points payload — zero tile services, offline-capable |
 | **Navigational screening** | Channel depth, tidal range, vessel size & entrance restrictions at a glance |
 | **Live conditions per port** | Weather, sea state, tides and local time via key-free Open-Meteo proxies |
@@ -40,7 +40,7 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 <details>
 <summary>🔍 Omni-Search & Filters</summary>
 
-- Search across port name, country, state/province, point of interest, and WPI ID
+- Search across port name, alternate name, country, and WPI ID
 - Multi-select facets: country • port size • max vessel size
 - Minimum channel-depth sounding filter
 - Dual-handle tidal-range window
@@ -56,16 +56,16 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 - Raster OpenStreetMap base tiles — env-swappable via `VITE_OSM_TILE_URL` so production can point at a metered provider
 - Optional OpenSeaMap seamarks overlay, shown from zoom 6+
 - A country-level world view backed by the compact `GET /api/ports?format=countries` index — selecting a country reveals all of its ports as individual pins, no clustering
-- Pins use the moss port-size ramp — Major, Small, Minor, and outline-only Very Small — matching the table badges, with a small name label per pin (major ports prioritized when space is tight), decluttered automatically as you zoom
+- Pins use the moss port-size ramp — Large/Major, Small, Medium/Minor, and outline-only Very Small — matching the table badges, with a small name label per pin (major ports prioritized when space is tight), decluttered automatically as you zoom
 
 **Legacy SVG fallback** (`VITE_USE_MAPLIBRE=false`): self-contained Natural Earth cartography with zoom-based level-of-detail — no tiles, no keys, fully offline-capable:
 
 | Zoom | Visible ports |
 |------|---------------|
-| 1×   | Tier 1 — major international hubs (~160) |
-| 2×+  | + Tier 2 — small / regional ports (~1,137) |
-| 4×+  | + Tier 3 — minor ports (~1,499) |
-| 8×+  | + Tier 4 — very small ports & anchorages (all 5,410) |
+| 1×   | Tier 1 — the largest international hubs |
+| 2×+  | + Tier 2 — small / regional ports |
+| 4×+  | + Tier 3 — medium / minor ports |
+| 8×+  | + Tier 4 — very small ports & anchorages (all served ports) |
 
 The SVG renderer colors dots by maximum channel depth:
 
@@ -174,15 +174,16 @@ node --import tsx --test src/lib/contrast.test.ts
                     │             │  • FilterSidebar        │
                     ▼             │  • PortDetailSheet      │
           ┌────────────────────┐  └─────────────────────────┘
-          │  data/ports.json   │
-          │  (5,410 records)   │
+          │  data/portsv2-117  │
+          │  field.json (3,814 │
+          │  records, 117 f.)  │
           └────────────────────┘
 ```
 
 **Key design decisions:**
 
 - **Single process, single port** → no CORS friction, simple deployment
-- **Full dataset cached in the V8 heap (~3.3 MB)** → sub-5 ms queries with zero database overhead
+- **Full dataset cached in the V8 heap (~13 MB)** → sub-5 ms queries with zero database overhead
 - **Compact `format=points` payload + viewport culling** → smooth map panning at any zoom
 - **Dual map renderers** → MapLibre GL with OSM raster tiles by default (swap providers via `VITE_OSM_TILE_URL`), plus a self-contained Natural Earth SVG fallback (`VITE_USE_MAPLIBRE=false`) with zero tile services
 - **One API app, two entry points** → `buildApiApp()` in `src/lib/apiApp.ts` is shared by `server.ts` (local/self-host) and `api/index.ts` (Vercel serverless), so routes never drift
@@ -208,7 +209,7 @@ Common query parameters:
 
 | Parameter | Example | Notes |
 |-----------|---------|-------|
-| `q` | `rotterdam` | Omni-search (name, country, state, POI, WPI ID) |
+| `q` | `rotterdam` | Omni-search (name, alternate name, country, WPI ID) |
 | `country` | `Netherlands,Japan` | Comma-separated multi-select |
 | `portSize` / `vesselSize` | `Large,Medium` | Multi-select facets |
 | `minChannelDepth` | `10` | Minimum channel sounding (m) |
@@ -226,7 +227,8 @@ Common query parameters:
 
 ```text
 ├── api/index.ts                 # Vercel serverless entry (reuses buildApiApp)
-├── data/ports.json               # NGA World Port Index (5,410 records)
+├── data/portsv2-117 field.json   # NGA Updated Pub 150 (3,814 records, 117 fields)
+├── data/ports.json               # Legacy 2019 dataset (automatic fallback)
 ├── docs/architecture.md          # Full system design deep-dive
 ├── public/
 │   ├── land.json                 # Natural Earth coastline vectors (SVG map)
@@ -252,7 +254,7 @@ Common query parameters:
 
 ## 📊 Data Source & Disclaimer
 
-- **Dataset:** NGA Publication 150 *World Port Index* (2019 edition), via [tayljordan/ports](https://github.com/tayljordan/ports)
+- **Dataset:** NGA Publication 150 *World Port Index* (Updated Pub 150 CSV export, 2026), converted in-repo; the legacy 2019 dataset ([tayljordan/ports](https://github.com/tayljordan/ports)) is retained in `data/ports.json` as fallback
 - **Cartography:** Natural Earth admin-0 vectors (public domain)
 - **Astronomy:** [SunriseSunset.io](https://sunrisesunset.io) — daily sun/moon transit times per port (free API, no key, cached 12 h server-side)
 - **Weather, sea state & tides:** [Open-Meteo](https://open-meteo.com) Forecast + Marine APIs — key-free, proxied server-side with CDN caching

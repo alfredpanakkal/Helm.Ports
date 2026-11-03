@@ -22,6 +22,19 @@ export interface Port {
   point_of_interest: string | null;
   port_size: string | null;
   unlocode: string | null;
+  // portsv2 (Updated Pub 150) additions — optional so the legacy ports.json
+  // fallback keeps typechecking. The index signature carries the 95 extra
+  // CSV variables that PortDetailSheet renders in the full-record section.
+  [key: string]: unknown;
+  un_locode?: string | null;
+  alternate_port_name?: string | null;
+  region_name?: string | null;
+  harbor_type?: string | null;
+  maximum_vessel_length_m?: number | null;
+  maximum_vessel_draft_m?: number | null;
+  maximum_vessel_beam_m?: number | null;
+  pilotage_compulsory?: boolean | null;
+  tugs_assistance?: boolean | null;
 }
 
 export interface MapPoint {
@@ -126,16 +139,27 @@ export function formatDepth(v: number | null): string {
 
 export function formatRange(min: number | null, max: number | null): string {
   if (min == null && max == null) return "—";
-  if (min != null && max != null) return `${min.toFixed(1)}–${max.toFixed(1)} m`;
+  if (min != null && max != null) {
+    // portsv2 records a single sounding per facility (min === max); a
+    // "12.5–12.5 m" range would be noise, so collapse it to one value.
+    // The legacy file has true ranges and still renders the "a–b m" form.
+    if (min === max) return formatDepth(max);
+    return `${min.toFixed(1)}–${max.toFixed(1)} m`;
+  }
   return formatDepth(min ?? max);
 }
 
 /** Moss port-size ramp: one hue at four strengths, big → small.
  *  The label text is always shown, so colour never carries meaning alone.
+ *  Both label sets are covered: portsv2's raw Harbor Size labels
+ *  (Large/Medium reuse the strongest/accent ramp steps) and the legacy
+ *  2019 dataset's Major/Minor labels (kept for the ports.json fallback).
  *  Light/dark contrast pairs are asserted in src/lib/contrast.test.ts. */
 export const PORT_SIZE_STYLES: Record<string, string> = {
   Major: "border-transparent bg-sidebar-primary text-sidebar-primary-foreground",
+  Large: "border-transparent bg-sidebar-primary text-sidebar-primary-foreground",
   Small: "border-transparent bg-[#A9D3BB] text-[#16301F] dark:bg-[#2F5A44] dark:text-[#E9EDE9]",
   Minor: "border-accent-foreground/50 bg-accent text-accent-foreground",
+  Medium: "border-accent-foreground/50 bg-accent text-accent-foreground",
   "Very Small": "border-border bg-transparent text-muted-foreground",
 };

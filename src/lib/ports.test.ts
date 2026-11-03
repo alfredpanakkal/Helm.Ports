@@ -9,25 +9,39 @@ import { matchesQuery } from "./apiApp.ts";
 /**
  * Data-truth regression tests (restyle plan, Phase 0).
  *
- * They run against the real data/ports.json through the same loader the
- * API uses, so they double as dataset-integrity checks:
+ * They run against the real data file through the same loader the API
+ * uses, so they double as dataset-integrity checks:
  *  - records with an invalid wpi_port_id are never served
- *  - search invariants: name / country / state / POI / WPI ID, case-insensitive
- *  - soundings are feet-quantized (the WPI source records whole feet;
- *    the _m fields are converted to metres and rounded to 0.1 m) and
- *    min <= max per facility pair
+ *  - search invariants: name / alternate name / country / state / POI /
+ *    WPI ID, case-insensitive
+ *  - soundings are quantized to 0.1 m and min <= max per facility pair
+ *    (portsv2 records one sounding per facility, so min === max)
  *  - metadata describes the served records
  *
- * Live totals verified 2026-11-02 with a corrected probe method
- * (beyond-last-page requests, which return a tiny body carrying the true
- * total): q=ham 107, q=hamburg 4, q=germany 41, q=netherlands 41,
- * q=jebel ali 2. Thresholds below are deliberately lower than the observed
- * values so routine data refreshes do not break them.
+ * Live totals verified 2026-11-02 against the legacy dataset with a
+ * corrected probe method (beyond-last-page requests, which return a tiny
+ * body carrying the true total): q=ham 107, q=hamburg 4, q=germany 41,
+ * q=netherlands 41, q=jebel ali 2. Against the Updated Pub 150 export
+ * (portsv2), recomputed 2026-11-03 from the source CSV: q=ham 74,
+ * q=hamburg 2, q=germany 35, q=netherlands 22, q=jebel ali 1 (matched via
+ * alternate_port_name — state and point_of_interest are always null in
+ * portsv2). Thresholds below are deliberately lower than both observed
+ * sets so routine data refreshes do not break them.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const dataDir = path.join(here, "..", "..", "data");
+// Mirror the engine's data-file choice (src/lib/ports.ts resolveDataFile):
+// portsv2.json, then the pushed "portsv2-117 field.json", then the legacy
+// ports.json backup — so these assertions always target the served file.
+const dataFile = [
+  "portsv2.json",
+  "portsv2-117 field.json",
+  "ports.json",
+].map((name) => path.join(dataDir, name)).find((p) => fs.existsSync(p));
+if (!dataFile) throw new Error("No port data file found in data/");
 const raw = JSON.parse(
-  fs.readFileSync(path.join(here, "..", "..", "data", "ports.json"), "utf-8")
+  fs.readFileSync(dataFile, "utf-8")
 ) as { ports: Record<string, unknown>[] };
 
 const SOUNDING_FIELDS = [
@@ -82,7 +96,7 @@ test("matchesQuery searches name, country, state, POI and WPI ID", () => {
   assert.ok(matchesQuery(fixture, ""));
 });
 
-test("dataset search regressions (live totals verified 2026-11-02)", () => {
+test("dataset search regressions (live totals verified 2026-11-02/03)", () => {
   assert.ok(countMatches("ham") >= 50, "q=ham matched only " + countMatches("ham"));
   assert.ok(countMatches("hamburg") >= 1, "q=hamburg matched nothing");
   assert.ok(
@@ -95,7 +109,7 @@ test("dataset search regressions (live totals verified 2026-11-02)", () => {
   );
   assert.ok(
     countMatches("jebel ali") >= 1,
-    "q=jebel ali matched nothing (POI search)"
+    "q=jebel ali matched nothing (alternate-name search in portsv2)"
   );
   assert.equal(countMatches("HAM"), countMatches("ham"));
 });
@@ -127,25 +141,24 @@ test("source rows with an invalid WPI ID are excluded exactly once each", () => 
 test("metadata describes the served dataset", () => {
   const meta = getMetadata();
   assert.equal(meta.record_count, getPorts().length);
-  assert.ok(meta.source.length > 0);
-  assert.ok(meta.last_updated.length > 0);
+  // record_count is derived from the served records and always present;
+  // the portsv2 metadata block centers on its data dictionary, so the
+  // legacy last_updated/source strings may be absent — only assert the
+  // fields the UI depends on across both files.
+  assert.ok(meta.schema_version.length > 0);
 });
 
-test("soundings are whole-feet quantized (ft to m conversion invariant)", () => {
+test("soundings are quantized to 0.1 m (source precision invariant)", () => {
+  // portsv2 depths are native 0.1 m single soundings; the legacy
+  // ports.json was feet-derived but also rounded to 0.1 m — this
+  // invariant holds for both files.
   const violations: string[] = [];
   for (const p of getPorts()) {
     for (const field of SOUNDING_FIELDS) {
       const v = p[field];
       if (v == null) continue;
-      if (v < 0) {
-        violations.push(p.wpi_port_id + " " + field + " negative: " + v);
-        continue;
-      }
-      const ft = v / 0.3048;
-      if (Math.abs(ft - Math.round(ft)) > 0.35) {
-        violations.push(
-          p.wpi_port_id + " " + field + ": " + v + " m = " + ft.toFixed(2) + " ft"
-        );
+      if (v < 0 || Math.abs(v * 10 - Math.round(v * 10)) > 1e-6) {
+        violations.push(p.wpi_port_id + " " + field + ": " + v);
       }
     }
   }

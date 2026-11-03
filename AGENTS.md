@@ -6,7 +6,7 @@ Welcome, AI Agent. This document defines the engineering standards, architecture
 
 ## 1. Project Purpose & Remake Goals
 
-Helm.Ports is a specialized maritime data explorer that visualizes and queries **5,410 worldwide maritime ports** from the NGA World Port Index.
+Helm.Ports is a specialized maritime data explorer that visualizes and queries **3,814 worldwide maritime ports** from the NGA World Port Index (Updated Pub 150 export).
 
 ### Primary Goals:
 - **Zero-lag queries**: All searching, filtering, and sorting across 5,410 records must stay sub-5ms in-memory on the backend.
@@ -25,7 +25,7 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 | **Frontend UI** | React 19 (Functional / Hooks) | `@tanstack/react-query` v5, `lucide-react` |
 | **Primitives** | Radix UI | `@radix-ui/react-dialog`, `@radix-ui/react-select`, `@radix-ui/react-slider`, `@radix-ui/react-checkbox`, `@radix-ui/react-tabs`, `@radix-ui/react-scroll-area`, `@radix-ui/react-separator`, `@radix-ui/react-slot`, `@radix-ui/react-label` |
 | **CSS Utilities** | Tailwind CSS v4 + OKLCH colors | `clsx`, `tailwind-merge`, `class-variance-authority`, `tw-animate-css` |
-| **Data Storage** | Static JSON | `data/ports.json` (3.27 MB, 5,410 records) |
+| **Data Storage** | Static JSON | `data/portsv2-117 field.json` (13.4 MB, 3,814 records, 117 fields); legacy `data/ports.json` kept as automatic fallback |
 | **Map Rendering** | MapLibre GL (default) + equirectangular SVG fallback (`VITE_USE_MAPLIBRE`) | `maplibre-gl`, `src/map/config.ts`, `public/land.json` |
 
 ---
@@ -36,7 +36,8 @@ Helm.Ports is a specialized maritime data explorer that visualizes and queries *
 ├── api/
 │   └── index.ts                  # Vercel serverless entry — reuses buildApiApp(), no listener
 ├── data/
-│   └── ports.json                 # Primary database: loaded ONCE at module scope in server/lib
+│   ├── portsv2-117 field.json     # Primary database (Updated Pub 150, 117 fields): loaded ONCE at module scope
+│   └── ports.json                 # Legacy 2019 backup; automatic fallback when portsv2 is absent
 ├── docs/
 │   └── architecture.md            # Detailed system design & data flow documentation
 ├── public/
@@ -181,6 +182,10 @@ If dev server state needs refreshing after server or dependency changes:
 | **Faded hero on mobile** | The `.hero-grid` CSS mask was once applied to the whole hero `<section>`, fading the heading, search box and stat cards. | Keep the grid on its own masked, `pointer-events-none` layer (`<div className="hero-grid ..."/>`); the content wrapper sits above it with `relative`. |
 | **Mobile browsers re-darken / fade the app** | Android Chrome auto-dark and Edge forced-dark apply their own filter to pages that do not declare dark-awareness. | `color-scheme` is declared per theme in `src/index.css` plus `<meta name="color-scheme">` in `index.html`. Do not remove them. |
 | **Weather/marine 502 for inland ports** | Open-Meteo wave/sea models only cover the sea. | 502 with "unavailable for this location" is the designed response; clients hide the section. Do not convert it to 500 and do not cache failures. |
+| **portsv2 single soundings** | The Updated Pub 150 export records one depth per facility (min === max); 0 in the source means "no data" (stored as null). | `formatRange` collapses min === max to a single value. Never default a missing depth to 0 m. |
+| **port_size label sets differ per file** | portsv2 carries the raw Harbor Size labels ("Very Small"/"Small"/"Medium"/"Large"); legacy ports.json used "Major"/"Minor". | `PORT_SIZE_STYLES`, `PORT_SIZE_ORDER` and `PORT_SIZE_TIER` cover both sets. Keep the legacy entries — ports.json is the fallback file. |
+| **wpi_port_id is not unique in portsv2** | IDs 400, 9510, 49454 and 49460 each appear twice. | `GET /api/ports/:id` returns the first match; identify a port by id + name + coordinates. |
+| **Compatibility-only fields are null in portsv2** | `state`, `max_vessel_size` and `point_of_interest` have no source column and are always null. | Do not re-derive values silently; search quality is preserved via `alternate_port_name` (matchesQuery searches it). |
 
 ---
 

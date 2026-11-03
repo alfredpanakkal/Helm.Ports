@@ -55,8 +55,8 @@ Traditional port directories are static PDFs or heavy GIS tools. Helm.Ports is a
 
 - Raster OpenStreetMap base tiles — env-swappable via `VITE_OSM_TILE_URL` so production can point at a metered provider
 - Optional OpenSeaMap seamarks overlay, shown from zoom 6+
-- Port markers with clustering at world zoom, plus a country-level world view backed by the compact `GET /api/ports?format=countries` index
-- Select a country and its ports appear with small name labels (major ports prioritized when space is tight) — decluttered automatically as you zoom
+- A country-level world view backed by the compact `GET /api/ports?format=countries` index — selecting a country reveals all of its ports as individual pins, no clustering
+- Every pin carries a small port-name label (major ports prioritized when space is tight) — decluttered automatically as you zoom
 
 **Legacy SVG fallback** (`VITE_USE_MAPLIBRE=false`): self-contained Natural Earth cartography with zoom-based level-of-detail — no tiles, no keys, fully offline-capable:
 

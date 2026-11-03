@@ -26,12 +26,12 @@ interface Props {
 }
 
 const COUNTRY_LAYERS = ["country-dots", "country-labels"];
-const PORT_LAYERS = ["port-clusters", "port-cluster-count", "port-dots", "port-labels"];
+const PORT_LAYERS = ["port-dots", "port-labels"];
 
 /**
  * MapLibre GL world map. World view shows one dot per port-having country;
- * clicking a country fits it and shows its ports (clustered, with small
- * name labels on unclustered dots); clicking a
+ * clicking a country fits it and shows every port as an individual pin
+ * with a small name label; clicking a
  * port opens a popup with name, country, UN/LOCODE and local time, plus a
  * "More details" button that opens the existing PortDetailSheet.
  *
@@ -146,12 +146,12 @@ export function PortsMap({ onSelect }: Props) {
 
     map.on("load", () => {
       map.addSource("countries", { type: "geojson", data: EMPTY_FC });
+      // No clustering: a selected country's ports (a few hundred at most)
+      // render as individual pins immediately, each carrying a small
+      // name label decluttered by symbol collision detection.
       map.addSource("ports", {
         type: "geojson",
         data: EMPTY_FC,
-        cluster: true,
-        clusterMaxZoom: 9,
-        clusterRadius: 40,
       });
 
       map.addLayer({
@@ -199,44 +199,9 @@ export function PortsMap({ onSelect }: Props) {
         },
       });
       map.addLayer({
-        id: "port-clusters",
-        type: "circle",
-        source: "ports",
-        filter: ["has", "point_count"],
-        layout: { visibility: "none" },
-        paint: {
-          "circle-color": "#f59e0b",
-          "circle-radius": [
-            "step",
-            ["get", "point_count"],
-            14,
-            25,
-            18,
-            100,
-            24,
-          ],
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#ffffff",
-        },
-      });
-      map.addLayer({
-        id: "port-cluster-count",
-        type: "symbol",
-        source: "ports",
-        filter: ["has", "point_count"],
-        layout: {
-          visibility: "none",
-          "text-field": ["get", "point_count_abbreviated"],
-          "text-size": 12,
-          "text-font": ["Open Sans Regular"],
-        },
-        paint: { "text-color": "#ffffff" },
-      });
-      map.addLayer({
         id: "port-dots",
         type: "circle",
         source: "ports",
-        filter: ["!", ["has", "point_count"]],
         layout: { visibility: "none" },
         paint: {
           "circle-radius": 6,
@@ -245,15 +210,14 @@ export function PortsMap({ onSelect }: Props) {
           "circle-stroke-color": "#ffffff",
         },
       });
-      // Small port-name labels on unclustered dots, so each port can be
-      // identified at a glance. MapLibre symbol collision detection
-      // declutters automatically; tier (t) as symbol-sort-key keeps major
-      // ports labelled when space is tight.
+      // Small port-name labels so each port can be identified at a
+      // glance. MapLibre symbol collision detection declutters
+      // automatically; tier (t) as symbol-sort-key keeps major ports
+      // labelled when space is tight.
       map.addLayer({
         id: "port-labels",
         type: "symbol",
         source: "ports",
-        filter: ["!", ["has", "point_count"]],
         layout: {
           visibility: "none",
           "text-field": ["get", "n"],
@@ -279,29 +243,6 @@ export function PortsMap({ onSelect }: Props) {
         map.getCanvas().style.cursor = "pointer";
       });
       map.on("mouseleave", "country-dots", () => {
-        map.getCanvas().style.cursor = "";
-      });
-
-      map.on("click", "port-clusters", (e) => {
-        const f = map.queryRenderedFeatures(e.point, { layers: ["port-clusters"] })[0];
-        const src = map.getSource("ports");
-        if (!f || !src) return;
-        (src as GeoJSONSource)
-          .getClusterExpansionZoom(Number(f.properties?.cluster_id))
-          .then(
-            (z) => {
-              map.easeTo({
-                center: (f.geometry as { coordinates: [number, number] }).coordinates,
-                zoom: z,
-              });
-            },
-            () => {}
-          );
-      });
-      map.on("mouseenter", "port-clusters", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "port-clusters", () => {
         map.getCanvas().style.cursor = "";
       });
 
@@ -391,7 +332,7 @@ export function PortsMap({ onSelect }: Props) {
     if (entry) selectCountry(entry.name, false);
   }, [mapReady, countriesQuery.data, selectCountry]);
 
-  // Ports of the selected country -> clustered source.
+  // Ports of the selected country -> source.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;

@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "helmports",
     "public": "dist",
     "ignore": [
       "firebase.json",

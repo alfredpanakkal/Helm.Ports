@@ -301,7 +301,7 @@ Alfred is a Third Officer on ocean-going tankers and a full-stack developer. He 
 
 He also built the rest of the Helm family of maritime tools — **Helm.Warning** (NAVAREA navigational-warning pipeline), **Helm Almanac** (celestial almanac & star chart), **Helm Productivity**, **Bond Vault** (shipboard bond-store ledger), **Seatime & NRI Calculator** and **Mudhra Converter** — full case studies on the portfolio.
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-alfred--panakkal-2F6B4F?style=flat-square)](https://alfred-panakkal.vercel.app)
+[![Portfolio](https://img.shields.io/badge/Portfolio-alfred--panakkal-2F6B4F?style=flat-square)](https://alfredpanakkal.web.app)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-in%2Falfredpanakkal-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/alfredpanakkal/)
 [![GitHub](https://img.shields.io/badge/GitHub-@alfredpanakkal-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/alfredpanakkal)
 
@@ -316,4 +316,4 @@ We welcome improvements! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 ---
 
-<sub>Built for maritime curiosity by <a href="https://alfred-panakkal.vercel.app">Alfred Jose</a> • Powered by React 19 + Vite + Express</sub>
+<sub>Built for maritime curiosity by <a href="https://alfredpanakkal.web.app">Alfred Jose</a> • Powered by React 19 + Vite + Express</sub>
